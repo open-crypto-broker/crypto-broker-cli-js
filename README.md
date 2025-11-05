@@ -4,20 +4,6 @@
 
 This Crypto Broker CLI is an example CLI app written in TypeScript to allow users to interact with a Crypto Broker Server using the [crypto-broker-client-js](https://github.com/open-crypto-broker/crypto-broker-client-js) library.
 
-## Installation
-
-If you want to install the CLI app on your local machine, you can do this with:
-
-```bash
-npm install -g
-```
-
-Note: This might need higher privileges and $PATH to be adjusted.
-
-The CLI can then be used via the "cryptobroker-cli" command.
-
-Note: The [server application](https://github.com/open-crypto-broker/crypto-broker-server/) must be running locally.
-
 ## Development
 
 This section covers how to contribute to the project and develop it further.
@@ -62,6 +48,20 @@ task test-sign
 ```
 
 Note: For the sign command, you need to have the [deployment repository](https://github.com/open-crypto-broker/crypto-broker-deployment) in the same parent directory as this repository. Check the command definitions in the `package.json` file to run your own custom commands.
+
+## CLI Installation
+
+After building, it might be preferable to install the CLI app on your local machine as a command line tool. This can be done with:
+
+```bash
+npm install -g
+```
+
+Note: This might need higher privileges and $PATH to be adjusted.
+
+The CLI can then be used via the "cryptobroker-cli" command.
+
+Note: The [server application](https://github.com/open-crypto-broker/crypto-broker-server/) must be running locally.
 
 ## Support, Feedback, Contributing
 

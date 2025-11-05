@@ -25,7 +25,7 @@ tasks:
     cmds:
       - apt install docker-buildx
 
-  ################# Build Node.js Client ####################
+  ################# Build Node.js CLI test app ####################
   build:
     desc: "Builds the js files including declarations and CLI"
     cmds:
@@ -33,7 +33,7 @@ tasks:
       - npm run build
 
   build-docker:
-    desc: "Builds the Docker image for the client app"
+    desc: "Builds the Docker image for the CLI test app"
     vars:
       TAG: '{{.TAG | default "latest"}}'
     dotenv: ['.env']
