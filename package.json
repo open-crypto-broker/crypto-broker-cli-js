@@ -1,0 +1,62 @@
+{
+  "name": "cryptobroker-cli",
+  "bin": "./dist/cli.js",
+  "version": "0.1.0",
+  "main": "./dist/cli.js",
+  "type": "module",
+  "files": [
+    "./dist"
+  ],
+  "scripts": {
+    "build": "tsc --declaration",
+    "clean": "tsc --build --clean --declaration",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "format": "eslint --fix && prettier --write 'src/**/*.{ts,tsx,js,json,md}'",
+    "prepare": "husky || true"
+  },
+  "keywords": [
+    "cryptobroker",
+    "crypto-broker",
+    "crypto-broker-cli",
+    "apeiro",
+    "apeirora",
+    "crypto",
+    "agility"
+  ],
+  "authors": [
+    "Arturo Guridi",
+    "Miyana Stange"
+  ],
+  "license": "Apache-2.0",
+  "description": "Client Javascript repository to interact with a deployed Crypto Broker Server",
+  "dependencies": {
+    "-": "^0.0.1",
+    "@bufbuild/protobuf": "^2.5.2",
+    "@grpc/grpc-js": "1.13.3",
+    "@peculiar/x509": "^1.14.0",
+    "argparse": "^2.0.1",
+    "bufbuild": "^0.2.0",
+    "cryptobroker-client": "git://github.com/open-crypto-broker/crypto-broker-client-js.git#dev",
+    "depcheck": "^1.4.7",
+    "tsconfig": "^7.0.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@tsconfig/node22": "^22.0.2",
+    "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.34.1",
+    "@typescript-eslint/parser": "^8.34.1",
+    "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.5.0",
+    "husky": "^9.1.7",
+    "jest": "^29.6.2",
+    "prettier": "^3.5.3",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "ts-proto": "^2.7.0",
+    "tsx": "^4.19.4",
+    "typescript": "5.8.3"
+  }
+}

@@ -1,0 +1,90 @@
+version: '3'
+
+vars:
+  PROTOBUF_VERSION: "32.1"
+  # GNU grep support depending on OS
+  GREP_CMD:
+    sh: |
+      case "$(uname)" in
+        Darwin*) echo ggrep ;;
+        Linux*) echo grep ;;
+      esac
+
+tasks:
+  ################# Development Tools ####################
+  # Additional resources:
+  # - https://docs.docker.com/reference/cli/docker/buildx/
+  tools:
+    desc: "Download tools required for development"
+    deps: [install-docker-buildx]
+
+  # Install docker-buildx
+  install-docker-buildx:
+    desc: "Install docker-buildx on Ubuntu"
+    platforms: ["linux/amd64"]
+    cmds:
+      - apt install docker-buildx
+
+  ################# Build Node.js Client ####################
+  build:
+    desc: "Builds the js files including declarations and CLI"
+    cmds:
+      - npm install
+      - npm run build
+
+  build-docker:
+    desc: "Builds the Docker image for the client app"
+    vars:
+      TAG: '{{.TAG | default "latest"}}'
+    dotenv: ['.env']
+    cmds:
+      - docker buildx build -t ghcr.io/open-crypto-broker/test-app-js:{{.TAG}} -f docker/Dockerfile .
+
+  delete-binaries:
+    desc: "Delete binary artifacts"
+    cmds:
+      - npm run clean
+
+  ################# Tests ####################
+  test-hash:
+    deps: [build]
+    desc: "Test hashing command with Default profile"
+    cmds:
+      - node ./dist/cli.js --profile=Default hash "Hello"
+
+  test-sign:
+    deps: [build]
+    desc: "Test certificate signing command with Default profile"
+    cmds:
+      - |
+        TMP_DIR=tmp-tests
+        TEST_CA_DIR=../crypto-broker-deployment/testing/certificates/test-ca
+        TEST_CSR_DIR=../crypto-broker-deployment/testing/certificates/test-csr
+        rm -rf $TMP_DIR
+        mkdir -p $TMP_DIR
+        SIGNED_CERTIFICATE=$(node ./dist/cli.js --profile=Default sign --csr=$TEST_CSR_DIR/test-client.csr --caCert=$TEST_CA_DIR/root-CA-ecdsa.pem --caKey=$TEST_CA_DIR/root-CA-ecdsa-private-key.pem | {{.GREP_CMD}} -oP '\"signedCertificate\":\s?"\K[^"]+')
+        printf "$SIGNED_CERTIFICATE" > $TMP_DIR/cert-response.pem
+        openssl x509 -inform PEM -in $TMP_DIR/cert-response.pem -text
+
+  ################# Continuous Improvement Tasks ####################
+  format:
+    desc: "Apply formatting rules to Node.js code"
+    cmds:
+      - npm run format
+
+  lint:
+    desc: "Apply linting to Node.js code"
+    cmds:
+      - npm run lint
+
+  vulnerability-check:
+    desc: "Run vulnerability check"
+    cmds:
+      - npm audit
+
+  ci:
+    desc: "Runs continuous integration checks on source code"
+    cmds:
+    - task: format
+    - task: lint
+    - task: vulnerability-check

@@ -1,0 +1,17 @@
+# Node modules
+node_modules/
+# Logs
+*.log
+# Environment variables
+.env
+# Coverage directory
+coverage/
+# Optional npm cache directory
+.npm
+# Optional eslint cache
+.eslintcache
+# VS Code
+.vscode/*
+# Packed files
+*.tgz
+*.idea
