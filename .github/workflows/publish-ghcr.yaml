@@ -38,7 +38,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run image build and push pipeline
-        uses: test-org-for-release/.github/actions/publish-ghcr@main
+        uses: open-crypto-broker/.github/actions/publish-ghcr@main
         with:
           registry: ghcr.io/open-crypto-broker
           image_name: test_app_js
