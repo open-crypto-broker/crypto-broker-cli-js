@@ -40,6 +40,6 @@ jobs:
       - name: Run image build and push pipeline
         uses: test-org-for-release/.github/actions/publish-ghcr@main
         with:
-          REGISTRY: ghcr.io/open-crypto-broker
-          IMAGE_NAME: test_app_js
-          IMAGE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          registry: ghcr.io/open-crypto-broker
+          image_name: test_app_js
+          image_tag: ${{ github.event.inputs.tag || github.ref_name }}
