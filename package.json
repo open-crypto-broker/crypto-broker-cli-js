@@ -32,7 +32,7 @@
   "dependencies": {
     "-": "^0.0.1",
     "argparse": "^2.0.1",
-    "cryptobroker-client": "github:open-crypto-broker/crypto-broker-client-js#dev",
+    "cryptobroker-client": "github:open-crypto-broker/crypto-broker-client-js",
     "depcheck": "^1.4.7",
     "uuid": "^11.1.0"
   },
