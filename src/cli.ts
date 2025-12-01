@@ -7,6 +7,7 @@ import {
   ArgumentDefaultsHelpFormatter,
   ArgumentTypeError,
 } from 'argparse';
+import { HealthCheckResponse_ServingStatus } from '../../crypto-broker-client-js/dist/lib/proto/third_party/grpc/health/v1/health.js';
 
 function logDuration(label: string, start: bigint, end: bigint) {
   const durationMicroS = (end - start) / BigInt(1000.0);
@@ -73,6 +74,11 @@ function init_parser() {
   sign_parser.add_argument('--subject', {
     help: 'Subject for the signing request (will overwrite the subject in the CSR)',
   });
+
+  sub_parsers.add_parser('status', {
+    help: 'request server serving status',
+  });
+
   return parser.parse_args();
 }
 
@@ -105,7 +111,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     logDuration('Data Hashing', start, end);
 
     // Certificate signing
-    // Usage: cli.js [--profile <profile>] [--loop <delay>] sign --csr --caCert --caKey [--encoding={B64,PEM}] [--subject]
+    // Usage: cli.js [--profile <profile>] [--loop <delay>] sign --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey> [--encoding={B64,PEM}] [--subject SUBJECT]
   } else if (command === 'sign') {
     const csrPath = parsed_args.csr;
     const caCertPath = parsed_args.caCert;
@@ -142,6 +148,17 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     const end = process.hrtime.bigint();
     console.log('Sign response:\n', JSON.stringify(signResponse, null, 2));
     logDuration('Certificate Signing', start, end);
+    // Usage: cli.js [--profile <profile>] [--loop <delay>] status
+  } else if (command === 'status') {
+    console.log('Requesting serving status...');
+
+    const health_resp = await cryptoLib.healthCheck();
+    console.log(
+      'HealthCheck response:\n',
+      JSON.stringify(health_resp, null, 2),
+    );
+    const status_obj = HealthCheckResponse_ServingStatus[health_resp.status];
+    console.log('Status: ', status_obj);
   }
 }
 
