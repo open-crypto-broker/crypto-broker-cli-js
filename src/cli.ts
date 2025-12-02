@@ -7,7 +7,7 @@ import {
   ArgumentDefaultsHelpFormatter,
   ArgumentTypeError,
 } from 'argparse';
-import { HealthCheckResponse_ServingStatus } from '../../crypto-broker-client-js/dist/lib/proto/third_party/grpc/health/v1/health.js';
+import { HealthCheckResponse_ServingStatus } from 'cryptobroker-client';
 
 function logDuration(label: string, start: bigint, end: bigint) {
   const durationMicroS = (end - start) / BigInt(1000.0);

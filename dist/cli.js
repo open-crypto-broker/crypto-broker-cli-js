@@ -3,7 +3,7 @@ import { CertEncoding, CryptoBrokerClient } from 'cryptobroker-client';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError, } from 'argparse';
-import { HealthCheckResponse_ServingStatus } from '../../crypto-broker-client-js/dist/lib/proto/third_party/grpc/health/v1/health.js';
+import { HealthCheckResponse_ServingStatus } from 'cryptobroker-client';
 function logDuration(label, start, end) {
     const durationMicroS = (end - start) / BigInt(1000.0);
     console.log(`${label} took ${durationMicroS} µs`);
