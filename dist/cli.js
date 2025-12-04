@@ -131,10 +131,10 @@ async function execute(cryptoLib) {
     }
     else if (command === 'status') {
         console.log('Requesting serving status...');
-        const health_resp = await cryptoLib.healthCheck();
-        console.log('HealthCheck response:\n', JSON.stringify(health_resp, null, 2));
-        const status_obj = HealthCheckResponse_ServingStatus[health_resp.status];
-        console.log('Status: ', status_obj);
+        const health_data = await cryptoLib.healthData();
+        console.log('HealthCheck response:\n', JSON.stringify(health_data, null, 2));
+        const serving_status = HealthCheckResponse_ServingStatus[health_data.status];
+        console.log('Status: ', serving_status);
     }
 }
 async function main() {
