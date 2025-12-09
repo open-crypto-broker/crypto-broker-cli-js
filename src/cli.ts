@@ -153,13 +153,12 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     console.log('Requesting serving status...');
 
     const health_data = await cryptoLib.healthData();
-    console.log(
-      'HealthCheck response:\n',
-      JSON.stringify(health_data, null, 2),
-    );
+    console.log('HealthCheck response:');
+    console.log(JSON.stringify(health_data, null, 2));
+
     const serving_status =
       HealthCheckResponse_ServingStatus[health_data.status];
-    console.log('Status: ', serving_status);
+    console.log('Status:', serving_status);
   }
 }
 
