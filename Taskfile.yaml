@@ -66,6 +66,12 @@ tasks:
         printf "$SIGNED_CERTIFICATE" > $TMP_DIR/cert-response.pem
         openssl x509 -inform PEM -in $TMP_DIR/cert-response.pem -text
 
+  healthcheck:
+    deps: [build]
+    desc: "Requests the server status using the CLI's health command"
+    cmds:
+      - node ./dist/cli.js health
+
   ################# Continuous Improvement Tasks ####################
   format:
     desc: "Apply formatting rules to Node.js code"

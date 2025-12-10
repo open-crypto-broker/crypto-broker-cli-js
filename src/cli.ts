@@ -75,8 +75,8 @@ function init_parser() {
     help: 'Subject for the signing request (will overwrite the subject in the CSR)',
   });
 
-  sub_parsers.add_parser('status', {
-    help: 'request server serving status',
+  sub_parsers.add_parser('health', {
+    help: 'request server health status',
   });
 
   return parser.parse_args();
@@ -148,18 +148,17 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     const end = process.hrtime.bigint();
     console.log('Sign response:\n', JSON.stringify(signResponse, null, 2));
     logDuration('Certificate Signing', start, end);
-    // Usage: cli.js [--profile <profile>] [--loop <delay>] status
-  } else if (command === 'status') {
-    console.log('Requesting serving status...');
+    // Usage: cli.js [--profile <profile>] [--loop <delay>] health
+  } else if (command === 'health') {
+    console.log('Requesting server health status...');
 
     const health_data = await cryptoLib.healthData();
-    console.log(
-      'HealthCheck response:\n',
-      JSON.stringify(health_data, null, 2),
-    );
+    console.log('HealthCheck response:');
+    console.log(JSON.stringify(health_data, null, 2));
+
     const serving_status =
       HealthCheckResponse_ServingStatus[health_data.status];
-    console.log('Status: ', serving_status);
+    console.log('Status:', serving_status);
   }
 }
 
