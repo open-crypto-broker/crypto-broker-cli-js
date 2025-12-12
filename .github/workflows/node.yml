@@ -1,0 +1,32 @@
+name: JS-CLI Continuous Improvement
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    container:
+        image: node:22
+
+    steps:
+      - name: Install Task
+        uses: go-task/setup-task@v1
+        with:
+          version: '3.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+        env:
+          HUSKY: 0
+
+      - name: Run CI task from Taskfile (continuous integration)
+        run: task ci
