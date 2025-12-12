@@ -1,4 +1,4 @@
-name: JS-Client Continuous Improvement
+name: JS-CLI Continuous Improvement
 
 on:
   push:
