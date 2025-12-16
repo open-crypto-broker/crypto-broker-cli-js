@@ -1,0 +1,13 @@
+name: 'Build and Release Binaries'
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  build-and-release:
+    uses: open-crypto-broker/.github/.github/workflows/build-release.yaml@main
+    with:
+      language: js
+      app-name: crypto-broker-cli-js
