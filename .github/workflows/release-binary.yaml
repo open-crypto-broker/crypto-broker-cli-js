@@ -1,4 +1,4 @@
-name: Build and Release Binaries
+name: 'Build and Release Binaries'
 
 on:
   push:
@@ -6,69 +6,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  build:
-    name: Build binaries
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          # see https://docs.github.com/en/actions/reference/runners/github-hosted-runners
-          - os: ubuntu-latest
-            suffix: linux-x86_64
-          - os: macos-14
-            suffix: macos-arm64
-
-    steps:
-      - name: Install Task
-        uses: go-task/setup-task@v1
-        with:
-          version: '3.x'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Determine version
-        id: version
-        run: echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
-
-      - name: Run CI task from Taskfile
-        run: task ci
-
-      - name: Build binary
-        run: |
-          task build
-          mkdir -p build
-          cp bin/cryptobroker-server build/
-
-      - name: Create ZIP package
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          ARCHIVE="crypto-broker-cli-js-${VERSION}-${{ matrix.suffix }}.zip"
-          cd build
-          zip -r "../$ARCHIVE" crypto-broker-cli-js
-        shell: bash
-
-      - name: Upload artifact (ZIP)
-        uses: actions/upload-artifact@v4
-        with:
-          name: crypto-broker-cli-js-${{ matrix.suffix }}
-          path: crypto-broker-cli-js-${{ steps.version.outputs.version }}-${{ matrix.suffix }}.zip
-
-  release:
-    name: Upload artifacts to release
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/**/*.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build-and-release:
+    uses: open-crypto-broker/.github/.github/workflows/build-release.yaml@main
+    with:
+      app-name: crypto-broker-cli-js
