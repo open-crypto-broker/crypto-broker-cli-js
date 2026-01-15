@@ -66,7 +66,7 @@ tasks:
         printf "$SIGNED_CERTIFICATE" > $TMP_DIR/cert-response.pem
         openssl x509 -inform PEM -in $TMP_DIR/cert-response.pem -text
 
-  healthcheck:
+  test-health:
     deps: [build]
     desc: "Requests the server status using the CLI's health command"
     cmds:
