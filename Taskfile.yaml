@@ -71,7 +71,7 @@ tasks:
           echo -e "Certificate signing failed"
         fi
 
-  healthcheck:
+  test-health:
     deps: [build]
     desc: "Requests the server status using the CLI's health command"
     cmds:
