@@ -65,6 +65,9 @@ function init_parser() {
     sub_parsers.add_parser('health', {
         help: 'request server health status',
     });
+    sub_parsers.add_parser('benchmark', {
+        help: 'request server-side benchmark',
+    });
     return parser.parse_args();
 }
 // initializes the parsers
@@ -76,16 +79,17 @@ async function execute(cryptoLib) {
     // Usage: cli.js [--profile <profile>] [--loop <delay>] hash <data>
     if (command === 'hash') {
         const data = parsed_args.data;
-        console.log(`Hashing '${data}' using "${profile}" profile`);
-        const start = process.hrtime.bigint();
-        const hashResponse = await cryptoLib.hashData({
+        const payload = {
             profile: profile,
             input: Buffer.from(data),
             metadata: {
                 id: uuidv4(),
                 createdAt: new Date().toString(),
             },
-        });
+        };
+        console.log(`Hashing '${data}' using "${profile}" profile...`);
+        const start = process.hrtime.bigint();
+        const hashResponse = await cryptoLib.hashData(payload);
         const end = process.hrtime.bigint();
         if (parsed_args.data_only)
             console.log(hashResponse.hashValue);
@@ -115,13 +119,17 @@ async function execute(cryptoLib) {
                 id: uuidv4(),
                 createdAt: new Date().toString(),
             },
+            crlDistributionPoints: [
+                'http://example.com/crls/list1.crl',
+                'http://example.com/crls/list2.crl',
+            ],
         };
         // add subject to payload if it was provided
         if (subject) {
             payload['subject'] = subject;
             console.log(`Note: The CSR subject will be overwritten by "${subject}".`);
         }
-        // Starting certificate signing
+        console.log(`Signing certificate using "${profile}" profile...`);
         const start = process.hrtime.bigint();
         const signResponse = await cryptoLib.signCertificate(payload, options);
         const end = process.hrtime.bigint();
@@ -132,14 +140,25 @@ async function execute(cryptoLib) {
     else if (command === 'health') {
         console.log('Requesting server health status...');
         const health_data = await cryptoLib.healthData();
-        console.log('HealthCheck response:');
-        console.log(JSON.stringify(health_data, null, 2));
+        console.log('HealthCheck response:', JSON.stringify(health_data, null, 2));
         const serving_status = HealthCheckResponse_ServingStatus[health_data.status];
         console.log('Status:', serving_status);
     }
+    else if (command === 'benchmark') {
+        console.log('Running server-side benchmarks...');
+        const benchmarkResponse = await cryptoLib.benchmarkData({
+            metadata: {
+                id: uuidv4(),
+                createdAt: new Date().toString(),
+            },
+        });
+        console.log('Benchmark response:\n', JSON.stringify(benchmarkResponse, null, 2));
+    }
 }
 async function main() {
+    // create new client and wait for the connection to become ready
     const cryptoLib = new CryptoBrokerClient();
+    await cryptoLib.ready();
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     // signal handling
     process.on('SIGINT', () => {
