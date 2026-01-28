@@ -77,6 +77,12 @@ tasks:
     cmds:
       - node ./dist/cli.js health
 
+  test-benchmark:
+    deps: [build]
+    desc: "Test benchmark command to request a server-side benchmark"
+    cmds:
+      - node ./dist/cli.js benchmark
+
   ################# Continuous Improvement Tasks ####################
   format:
     desc: "Apply formatting rules to Node.js code"
