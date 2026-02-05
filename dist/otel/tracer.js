@@ -39,7 +39,7 @@ const buildExporter = (name) => {
                     Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
                 };
             }
-            console.log('Registered proto exporter.');
+            console.log('Registered protobuf exporter.');
             return new ProtoExporter(collectorOptions);
     }
 };
