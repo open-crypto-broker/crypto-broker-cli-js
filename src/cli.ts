@@ -1,6 +1,13 @@
 #!/usr/bin/env node
-import { CertEncoding, CryptoBrokerClient } from 'cryptobroker-client';
-import { HashPayload, SignPayload } from 'cryptobroker-client';
+import { tracer, tracingProvider } from './otel/tracer.js';
+import { context, trace, SpanStatusCode } from '@opentelemetry/api';
+import {
+  CryptoBrokerClient,
+  BenchmarkPayload,
+  CertEncoding,
+  HashPayload,
+  SignPayload,
+} from 'cryptobroker-client';
 
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -99,23 +106,47 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   // Usage: cli.js [--profile <profile>] [--loop <delay>] hash <data>
   if (command === 'hash') {
     const data: string = parsed_args.data;
-    const payload: HashPayload = {
-      profile: profile,
-      input: Buffer.from(data),
-      metadata: {
-        id: uuidv4(),
-        createdAt: new Date().toString(),
-      },
-    };
+    const span = tracer.startSpan('CLI.Hash');
 
     console.log(`Hashing '${data}' using "${profile}" profile...`);
     const start = process.hrtime.bigint();
-    const hashResponse = await cryptoLib.hashData(payload);
-    const end = process.hrtime.bigint();
-    if (parsed_args.data_only) console.log(hashResponse.hashValue);
-    console.log('Hashed response:\n', JSON.stringify(hashResponse, null, 2));
-    logDuration('Data Hashing', start, end);
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      try {
+        // prepare payload
+        const payload: HashPayload = {
+          profile: profile,
+          input: Buffer.from(data),
+          metadata: {
+            id: uuidv4(),
+            createdAt: new Date().toString(),
+            traceContext: {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+              traceFlags: span.spanContext().traceFlags.toString(),
+              traceState: span.spanContext().traceState?.serialize() || '',
+            },
+          },
+        };
 
+        // hash request
+        const hashResponse = await cryptoLib.hashData(payload);
+
+        // return only the hash if data-only is set
+        if (parsed_args.data_only) console.log(hashResponse.hashValue);
+        console.log('Hash response:\n', JSON.stringify(hashResponse, null, 2));
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (err) {
+        if (err instanceof Error) {
+          span.recordException(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        }
+        throw err;
+      } finally {
+        const end = process.hrtime.bigint();
+        logDuration('Data Hashing', start, end);
+        span.end();
+      }
+    });
     // Certificate signing
     // Usage: cli.js [--profile <profile>] [--loop <delay>] sign --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey> [--encoding={B64,PEM}] [--subject SUBJECT]
   } else if (command === 'sign') {
@@ -127,71 +158,122 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     const options = {
       encoding: encoding,
     };
-
-    const csr = fs.readFileSync(csrPath, 'utf8');
-    const caCert = fs.readFileSync(caCertPath, 'utf8');
-    const caPrivateKey = fs.readFileSync(signingKeyPath, 'utf8');
-
-    const payload: SignPayload = {
-      profile: profile,
-      csr: csr,
-      caPrivateKey: caPrivateKey,
-      caCert: caCert,
-      metadata: {
-        id: uuidv4(),
-        createdAt: new Date().toString(),
-      },
-      crlDistributionPoints: [
-        'http://example.com/crls/list1.crl',
-        'http://example.com/crls/list2.crl',
-      ],
-    };
-    // add subject to payload if it was provided
-    if (subject) {
-      payload['subject'] = subject;
-      console.log(`Note: The CSR subject will be overwritten by "${subject}".`);
-    }
+    const span = tracer.startSpan('CLI.Sign');
 
     console.log(`Signing certificate using "${profile}" profile...`);
     const start = process.hrtime.bigint();
-    const signResponse = await cryptoLib.signCertificate(payload, options);
-    const end = process.hrtime.bigint();
-    console.log('Sign response:\n', JSON.stringify(signResponse, null, 2));
-    logDuration('Certificate Signing', start, end);
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      try {
+        // prepare payload
+        const csr = fs.readFileSync(csrPath, 'utf8');
+        const caCert = fs.readFileSync(caCertPath, 'utf8');
+        const caPrivateKey = fs.readFileSync(signingKeyPath, 'utf8');
 
+        const payload: SignPayload = {
+          profile: profile,
+          csr: csr,
+          caPrivateKey: caPrivateKey,
+          caCert: caCert,
+          metadata: {
+            id: uuidv4(),
+            createdAt: new Date().toString(),
+          },
+          crlDistributionPoints: [
+            'http://example.com/crls/list1.crl',
+            'http://example.com/crls/list2.crl',
+          ],
+        };
+        // add subject to payload if it was provided
+        if (subject) {
+          payload['subject'] = subject;
+          console.log(
+            `Note: The CSR subject will be overwritten by "${subject}".`,
+          );
+        }
+        // sign request
+        const signResponse = await cryptoLib.signCertificate(payload, options);
+        console.log('Sign response:\n', JSON.stringify(signResponse, null, 2));
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (err) {
+        if (err instanceof Error) {
+          span.recordException(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        }
+        throw err;
+      } finally {
+        const end = process.hrtime.bigint();
+        logDuration('Certificate Signing', start, end);
+        span.end();
+      }
+    });
+    // Health Status
     // Usage: cli.js [--profile <profile>] [--loop <delay>] health
   } else if (command === 'health') {
+    const span = tracer.startSpan('CLI.Health');
     console.log('Requesting server health status...');
-
-    const health_data = await cryptoLib.healthData();
-    console.log('HealthCheck response:', JSON.stringify(health_data, null, 2));
-
-    const serving_status =
-      HealthCheckResponse_ServingStatus[health_data.status];
-    console.log('Status:', serving_status);
-  } else if (command === 'benchmark') {
-    console.log('Running server-side benchmarks...');
-    const benchmarkResponse = await cryptoLib.benchmarkData({
-      metadata: {
-        id: uuidv4(),
-        createdAt: new Date().toString(),
-      },
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      try {
+        const health_data = await cryptoLib.healthData();
+        console.log(
+          'HealthCheck response:',
+          JSON.stringify(health_data, null, 2),
+        );
+        const serving_status =
+          HealthCheckResponse_ServingStatus[health_data.status];
+        console.log('Status:', serving_status);
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (err) {
+        if (err instanceof Error) {
+          span.recordException(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        }
+        throw err;
+      } finally {
+        span.end();
+      }
     });
+    // Server-side benchmark (self-test)
+    // Usage: cli.js [--profile <profile>] benchmark
+  } else if (command === 'benchmark') {
+    const span = tracer.startSpan('CLI.Benchmark');
 
-    console.log(
-      'Benchmark response:\n',
-      JSON.stringify(benchmarkResponse, null, 2),
-    );
+    console.log('Running server-side benchmarks...');
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      try {
+        // prepare payload
+        const payload: BenchmarkPayload = {
+          metadata: {
+            id: uuidv4(),
+            createdAt: new Date().toString(),
+            traceContext: {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+              traceFlags: span.spanContext().traceFlags.toString(),
+              traceState: span.spanContext().traceState?.serialize() || '',
+            },
+          },
+        };
+        // benchmark request
+        const benchmarkResponse = await cryptoLib.benchmarkData(payload);
+        console.log(
+          'Benchmark response:\n',
+          JSON.stringify(benchmarkResponse, null, 2),
+        );
+        span.setStatus({ code: SpanStatusCode.OK });
+      } catch (err) {
+        if (err instanceof Error) {
+          span.recordException(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        }
+        throw err;
+      } finally {
+        span.end();
+      }
+    });
   }
 }
 
 async function main() {
-  // create new client and wait for the connection to become ready
-  const cryptoLib = new CryptoBrokerClient();
-  await cryptoLib.ready();
-
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
   // signal handling
   process.on('SIGINT', () => {
     console.log('Received SIGINT, exiting...');
@@ -202,10 +284,24 @@ async function main() {
     process.exit(0);
   });
 
-  await execute(cryptoLib);
-  while (parsed_args.delay) {
-    await sleep(parsed_args.delay);
+  try {
+    // create new client
+    const cryptoLib = new CryptoBrokerClient();
+    // wait for the connection to become ready
+    await cryptoLib.ready();
+
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
     await execute(cryptoLib);
+    while (parsed_args.delay) {
+      await sleep(parsed_args.delay);
+      await execute(cryptoLib);
+    }
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  } finally {
+    await tracingProvider.shutdown();
   }
 }
 
