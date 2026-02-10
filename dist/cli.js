@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 import { tracer, tracingProvider } from './otel/tracer.js';
+import { loggingProvider } from './otel/logger.js';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { CryptoBrokerClient, CertEncoding, } from 'cryptobroker-client';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError, } from 'argparse';
 import { HealthCheckResponse_ServingStatus } from 'cryptobroker-client';
+import { createLogger, transports } from 'winston';
+const logger = createLogger({
+    transports: [new transports.Console()],
+});
 function logDuration(label, start, end) {
     const durationMicroS = (end - start) / BigInt(1000.0);
-    console.log(`${label} took ${durationMicroS} µs`);
+    logger.info(`${label} took ${durationMicroS} µs`);
 }
 function init_parser() {
     const parser = new ArgumentParser({
@@ -135,7 +140,7 @@ async function execute(cryptoLib) {
             encoding: encoding,
         };
         const span = tracer.startSpan('CLI.Sign');
-        console.log(`Signing certificate using "${profile}" profile...`);
+        logger.info(`Signing certificate using "${profile}" profile...`);
         const start = process.hrtime.bigint();
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
@@ -160,7 +165,7 @@ async function execute(cryptoLib) {
                 // add subject to payload if it was provided
                 if (subject) {
                     payload['subject'] = subject;
-                    console.log(`Note: The CSR subject will be overwritten by "${subject}".`);
+                    logger.info(`Note: The CSR subject will be overwritten by "${subject}".`);
                 }
                 // sign request
                 const signResponse = await cryptoLib.signCertificate(payload, options);
@@ -185,13 +190,13 @@ async function execute(cryptoLib) {
     }
     else if (command === 'health') {
         const span = tracer.startSpan('CLI.Health');
-        console.log('Requesting server health status...');
+        logger.info('Requesting server health status...');
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
                 const health_data = await cryptoLib.healthData();
-                console.log('HealthCheck response:', JSON.stringify(health_data, null, 2));
+                logger.info('HealthCheck response:', JSON.stringify(health_data, null, 2));
                 const serving_status = HealthCheckResponse_ServingStatus[health_data.status];
-                console.log('Status:', serving_status);
+                logger.info('Status:', serving_status);
                 span.setStatus({ code: SpanStatusCode.OK });
             }
             catch (err) {
@@ -210,7 +215,7 @@ async function execute(cryptoLib) {
     }
     else if (command === 'benchmark') {
         const span = tracer.startSpan('CLI.Benchmark');
-        console.log('Running server-side benchmarks...');
+        logger.info('Running server-side benchmarks...');
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
                 // prepare payload
@@ -247,11 +252,11 @@ async function execute(cryptoLib) {
 async function main() {
     // signal handling
     process.on('SIGINT', () => {
-        console.log('Received SIGINT, exiting...');
+        logger.info('Received SIGINT, exiting...');
         process.exit(0);
     });
     process.on('SIGTERM', () => {
-        console.log('Received SIGTERM, exiting...');
+        logger.info('Received SIGTERM, exiting...');
         process.exit(0);
     });
     try {
@@ -267,14 +272,15 @@ async function main() {
         }
     }
     catch (err) {
-        console.error(err);
+        logger.error(err);
         process.exit(1);
     }
     finally {
         await tracingProvider.shutdown();
+        await loggingProvider.shutdown();
     }
 }
 main().catch((err) => {
-    console.error('Error:', err);
+    logger.error('Error:', err);
 });
 //# sourceMappingURL=cli.js.map
