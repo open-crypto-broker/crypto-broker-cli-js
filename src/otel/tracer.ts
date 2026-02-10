@@ -121,7 +121,9 @@ if (spanProcessors.length > 0) {
     sampler: buildSampler(configuration.tracesSampler),
   });
 } else {
-  console.warn('No valid trace exporter was provided. Using default trace provider.');
+  console.warn(
+    'No valid trace exporter was provided. Using default trace provider.',
+  );
   tracingProvider = new NodeTracerProvider();
 }
 
