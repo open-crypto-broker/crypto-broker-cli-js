@@ -2,13 +2,6 @@ version: '3'
 
 vars:
   PROTOBUF_VERSION: "32.1"
-  OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4317" # Valid URL (only used when OTLP exporter is enabled)
-  OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION: "Api-Token [TOKEN]" # Authorization header for OTLP exporter
-  OTEL_SERVICE_NAME: "crypto-broker-cli-js"
-  OTEL_SERVICE_VERSION: "0.2.0"
-  OTEL_TRACES_EXPORTER: "console" # 'otlphttp', 'otlpgrpc', 'otlpproto', 'console', or comma-separated list like 'console,otlphttp', 'console,otlpgrpc'
-  OTEL_TRACES_SAMPLER: "always_off" # always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio.
-  OTEL_TRACES_SAMPLER_ARG: "0.1" # Sampling ratio (0.0-1.0) when using ratio-based samplers like traceidratio or parentbased_traceidratio.
   # GNU grep support depending on OS
   GREP_CMD:
     sh: |
@@ -16,6 +9,8 @@ vars:
         Darwin*) echo ggrep ;;
         Linux*) echo grep ;;
       esac
+
+dotenv: ['.env']
 
 tasks:
   ################# Development Tools ####################
@@ -60,6 +55,7 @@ tasks:
       - |
         OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
         OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
+        OTEL_LOGS_EXPORTER={{.OTEL_LOGS_EXPORTER}} \
         OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
         OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
         OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
@@ -79,6 +75,7 @@ tasks:
         mkdir -p $TMP_DIR
         RESPONSE=$( OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
                     OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
+                    OTEL_LOGS_EXPORTER={{.OTEL_LOGS_EXPORTER}} \
                     OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
                     OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
                     OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
@@ -103,6 +100,7 @@ tasks:
       - |
         OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
         OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
+        OTEL_LOGS_EXPORTER={{.OTEL_LOGS_EXPORTER}} \
         OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
         OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
         OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
@@ -117,6 +115,7 @@ tasks:
       - |
         OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
         OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
+        OTEL_LOGS_EXPORTER={{.OTEL_LOGS_EXPORTER}} \
         OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
         OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
         OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
