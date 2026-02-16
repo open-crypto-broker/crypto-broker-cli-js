@@ -218,6 +218,12 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           metadata: {
             id: uuidv4(),
             createdAt: new Date().toString(),
+            traceContext: {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+              traceFlags: span.spanContext().traceFlags.toString(),
+              traceState: span.spanContext().traceState?.serialize() || '',
+            },
           },
           crlDistributionPoints: [
             'http://example.com/crls/list1.crl',
