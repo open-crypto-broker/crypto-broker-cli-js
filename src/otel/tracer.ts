@@ -25,7 +25,7 @@ import { configuration } from './parameters.js';
 
 const buildExporter = (name: string) => {
   const collectorOptions = {
-    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT + '/v1/traces',
+    url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
   };
   switch (name) {
     default:
@@ -48,6 +48,7 @@ const buildExporter = (name: string) => {
           Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
         };
       }
+      collectorOptions.url += '/v1/traces';
       console.debug('Registered http trace exporter.');
       return new HttpExporter(collectorOptions);
     case 'otlpproto':
