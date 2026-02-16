@@ -1,0 +1,11 @@
+export const AttrRpcMethod = 'rpc.method';
+export const AttrCryptoProfile = 'crypto.profile';
+export const AttrCryptoInputSize = 'crypto.input_size';
+export const AttrCryptoHashAlgorithm = 'crypto.hash_algorithm';
+export const AttrCryptoHashOutputSize = 'crypto.hash_output_size';
+export const AttrCryptoSignedCertSize = 'crypto.signed_cert_size';
+export const AttrCryptoBenchmarkResultsSize = 'crypto.benchmark_results_size';
+export const AttrCryptoCsrSize = 'crypto.csr_size';
+export const AttrCryptoCaCertSize = 'crypto.ca_cert_size';
+export const AttrCryptoCaKeySize = 'crypto.ca_key_size';
+//# sourceMappingURL=attributes.js.map

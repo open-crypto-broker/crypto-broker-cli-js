@@ -1,0 +1,10 @@
+export declare const AttrRpcMethod = "rpc.method";
+export declare const AttrCryptoProfile = "crypto.profile";
+export declare const AttrCryptoInputSize = "crypto.input_size";
+export declare const AttrCryptoHashAlgorithm = "crypto.hash_algorithm";
+export declare const AttrCryptoHashOutputSize = "crypto.hash_output_size";
+export declare const AttrCryptoSignedCertSize = "crypto.signed_cert_size";
+export declare const AttrCryptoBenchmarkResultsSize = "crypto.benchmark_results_size";
+export declare const AttrCryptoCsrSize = "crypto.csr_size";
+export declare const AttrCryptoCaCertSize = "crypto.ca_cert_size";
+export declare const AttrCryptoCaKeySize = "crypto.ca_key_size";
