@@ -321,7 +321,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         const benchmarkResponse = await cryptoLib.benchmarkData(payload);
         console.log(
           'Benchmark response:\n',
-          JSON.stringify(benchmarkResponse, null, 2),
+          JSON.parse(benchmarkResponse.benchmarkResults),
         );
 
         // set additional tracing attribute
