@@ -83,7 +83,7 @@ tasks:
     deps: [build]
     desc: "Test benchmark command to request a server-side benchmark"
     cmds:
-      - ./dist/cli.js benchmark
+      - node ./dist/cli.js benchmark
 
   ################# Continuous Improvement Tasks ####################
   format:

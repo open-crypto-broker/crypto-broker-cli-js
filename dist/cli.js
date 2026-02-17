@@ -272,7 +272,7 @@ async function execute(cryptoLib) {
                 };
                 // benchmark request
                 const benchmarkResponse = await cryptoLib.benchmarkData(payload);
-                console.log('Benchmark response:\n', JSON.stringify(benchmarkResponse, null, 2));
+                console.log('Benchmark response:\n', JSON.parse(benchmarkResponse.benchmarkResults));
                 // set additional tracing attribute
                 span.setAttribute(AttrCryptoBenchmarkResultsSize, benchmarkResponse.benchmarkResults.length);
                 span.setStatus({ code: SpanStatusCode.OK });
