@@ -5,25 +5,23 @@ import { OTLPTraceExporter as ProtoExporter } from '@opentelemetry/exporter-trac
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } from '@opentelemetry/semantic-conventions';
 import { resourceFromAttributes, detectResources, processDetector, } from '@opentelemetry/resources';
 import { trace } from '@opentelemetry/api';
-const configuration = {
-    serviceName: process.env.OTEL_SERVICE_NAME || 'unknown service name',
-    serviceVersion: process.env.OTEL_SERVICE_VERSION || 'unknown service version',
-    tracesExporter: process.env.OTEL_TRACES_EXPORTER || 'console',
-    sampler: process.env.OTEL_TRACES_SAMPLER || 'always',
-};
+import { configuration } from './parameters.js';
 const buildExporter = (name) => {
     const collectorOptions = {
         url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
     };
     switch (name) {
         default:
-            console.warn(`"${name}" is not a valid exporter value. Skipping...`);
+            console.warn(`"${name}" is not a valid trace exporter value. Skipping...`);
+        // eslint-disable-next-line no-fallthrough
+        case 'none':
+            console.debug('Using no trace exporter.');
             return undefined;
         case 'console':
-            console.log('Registered console exporter.');
+            console.debug('Registered console trace exporter.');
             return new ConsoleSpanExporter();
         case 'otlpgrpc':
-            console.log('Registered grpc exporter.');
+            console.debug('Registered grpc trace exporter.');
             return new GrpcExporter(collectorOptions);
         case 'otlphttp':
             if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
@@ -31,7 +29,8 @@ const buildExporter = (name) => {
                     Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
                 };
             }
-            console.log('Registered http exporter.');
+            collectorOptions.url += '/v1/traces';
+            console.debug('Registered http trace exporter.');
             return new HttpExporter(collectorOptions);
         case 'otlpproto':
             if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
@@ -39,7 +38,7 @@ const buildExporter = (name) => {
                     Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
                 };
             }
-            console.log('Registered protobuf exporter.');
+            console.debug('Registered protobuf trace exporter.');
             return new ProtoExporter(collectorOptions);
     }
 };
@@ -50,26 +49,26 @@ const buildSampler = (name) => {
         // eslint-disable-next-line no-fallthrough
         case 'always':
         case 'always_on':
-            console.log('always_on sampler configured.');
+            console.debug('always_on sampler configured.');
             return new AlwaysOnSampler();
         case 'never':
         case 'always_off':
-            console.log('always_off sampler configured.');
+            console.debug('always_off sampler configured.');
             return new AlwaysOffSampler();
         case 'traceidratio':
         case 'ratio': {
-            console.log('traceidratio sampler configured.');
+            console.debug('traceidratio sampler configured.');
             const ratio = parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG ?? '1.0');
             return new TraceIdRatioBasedSampler(ratio);
         }
         case 'parentbased_always_on':
-            console.log('parentbased_always_on sampler configured.');
+            console.debug('parentbased_always_on sampler configured.');
             return new ParentBasedSampler({ root: new AlwaysOnSampler() });
         case 'parentbased_always_off':
-            console.log('parentbased_always_off sampler configured.');
+            console.debug('parentbased_always_off sampler configured.');
             return new ParentBasedSampler({ root: new AlwaysOffSampler() });
         case 'parentbased_traceidratio': {
-            console.log('parentbased_traceidratio sampler configured.');
+            console.debug('parentbased_traceidratio sampler configured.');
             const pb_ratio = parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG ?? '1.0');
             return new ParentBasedSampler({
                 root: new TraceIdRatioBasedSampler(pb_ratio),
@@ -97,11 +96,11 @@ if (spanProcessors.length > 0) {
             [ATTR_SERVICE_NAME]: configuration.serviceName,
             [ATTR_SERVICE_VERSION]: configuration.serviceVersion,
         })),
-        sampler: buildSampler(configuration.sampler),
+        sampler: buildSampler(configuration.tracesSampler),
     });
 }
 else {
-    console.warn('No valid exporter was provided. Using default provider.');
+    console.warn('No valid trace exporter was provided. Using default trace provider.');
     tracingProvider = new NodeTracerProvider();
 }
 tracingProvider.register();

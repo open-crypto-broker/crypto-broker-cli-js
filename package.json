@@ -32,15 +32,21 @@
   "dependencies": {
     "-": "^0.0.1",
     "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-logs-otlp-grpc": "^0.211.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.211.0",
+    "@opentelemetry/exporter-logs-otlp-proto": "^0.211.0",
     "@opentelemetry/exporter-trace-otlp-grpc": "^0.211.0",
     "@opentelemetry/exporter-trace-otlp-http": "^0.211.0",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.211.0",
+    "@opentelemetry/instrumentation-winston": "^0.55.0",
     "@opentelemetry/sdk-trace-node": "^2.5.0",
+    "@opentelemetry/winston-transport": "^0.21.0",
     "argparse": "^2.0.1",
     "cryptobroker-client": "github:open-crypto-broker/crypto-broker-client-js",
     "depcheck": "^1.4.7",
     "long": "^5.3.2",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",

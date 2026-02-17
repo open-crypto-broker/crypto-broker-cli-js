@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { tracer, tracingProvider } from './otel/tracer.js';
+import { loggingProvider } from './otel/logger.js';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import {
   CryptoBrokerClient,
@@ -8,6 +9,18 @@ import {
   HashPayload,
   SignPayload,
 } from 'cryptobroker-client';
+import {
+  AttrCryptoBenchmarkResultsSize,
+  AttrCryptoCaCertSize,
+  AttrCryptoCaKeySize,
+  AttrCryptoCsrSize,
+  AttrCryptoHashAlgorithm,
+  AttrCryptoHashOutputSize,
+  AttrCryptoInputSize,
+  AttrCryptoProfile,
+  AttrCryptoSignedCertSize,
+  AttrRpcMethod,
+} from './otel/attributes.js';
 
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
@@ -17,10 +30,14 @@ import {
   ArgumentTypeError,
 } from 'argparse';
 import { HealthCheckResponse_ServingStatus } from 'cryptobroker-client';
+import { createLogger, transports } from 'winston';
+const logger = createLogger({
+  transports: [new transports.Console()],
+});
 
 function logDuration(label: string, start: bigint, end: bigint) {
   const durationMicroS = (end - start) / BigInt(1000.0);
-  console.log(`${label} took ${durationMicroS} µs`);
+  logger.info(`${label} took ${durationMicroS} µs`);
 }
 
 function init_parser() {
@@ -106,7 +123,13 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   // Usage: cli.js [--profile <profile>] [--loop <delay>] hash <data>
   if (command === 'hash') {
     const data: string = parsed_args.data;
-    const span = tracer.startSpan('CLI.Hash');
+    const span = tracer.startSpan('CLI.Hash', {
+      attributes: {
+        [AttrRpcMethod]: 'Hash',
+        [AttrCryptoProfile]: profile,
+        [AttrCryptoInputSize]: data.length,
+      },
+    });
 
     console.log(`Hashing '${data}' using "${profile}" profile...`);
     const start = process.hrtime.bigint();
@@ -130,6 +153,12 @@ async function execute(cryptoLib: CryptoBrokerClient) {
 
         // hash request
         const hashResponse = await cryptoLib.hashData(payload);
+
+        // set additional tracing attributes
+        span.setAttributes({
+          [AttrCryptoHashAlgorithm]: hashResponse.hashAlgorithm,
+          [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
+        });
 
         // return only the hash if data-only is set
         if (parsed_args.data_only) console.log(hashResponse.hashValue);
@@ -158,9 +187,14 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     const options = {
       encoding: encoding,
     };
-    const span = tracer.startSpan('CLI.Sign');
+    const span = tracer.startSpan('CLI.Sign', {
+      attributes: {
+        [AttrRpcMethod]: 'Sign',
+        [AttrCryptoProfile]: profile,
+      },
+    });
 
-    console.log(`Signing certificate using "${profile}" profile...`);
+    logger.info(`Signing certificate using "${profile}" profile...`);
     const start = process.hrtime.bigint();
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
@@ -168,6 +202,13 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         const csr = fs.readFileSync(csrPath, 'utf8');
         const caCert = fs.readFileSync(caCertPath, 'utf8');
         const caPrivateKey = fs.readFileSync(signingKeyPath, 'utf8');
+
+        // add tracing attributes
+        span.setAttributes({
+          [AttrCryptoCsrSize]: csr.length,
+          [AttrCryptoCaCertSize]: caCert.length,
+          [AttrCryptoCaKeySize]: caPrivateKey.length,
+        });
 
         const payload: SignPayload = {
           profile: profile,
@@ -177,22 +218,35 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           metadata: {
             id: uuidv4(),
             createdAt: new Date().toString(),
+            traceContext: {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+              traceFlags: span.spanContext().traceFlags.toString(),
+              traceState: span.spanContext().traceState?.serialize() || '',
+            },
           },
           crlDistributionPoints: [
             'http://example.com/crls/list1.crl',
             'http://example.com/crls/list2.crl',
           ],
         };
+
         // add subject to payload if it was provided
         if (subject) {
           payload['subject'] = subject;
-          console.log(
+          logger.info(
             `Note: The CSR subject will be overwritten by "${subject}".`,
           );
         }
         // sign request
         const signResponse = await cryptoLib.signCertificate(payload, options);
         console.log('Sign response:\n', JSON.stringify(signResponse, null, 2));
+
+        // set additional tracing attribute
+        span.setAttribute(
+          AttrCryptoSignedCertSize,
+          signResponse.signedCertificate.length,
+        );
         span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
         if (err instanceof Error) {
@@ -209,18 +263,23 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     // Health Status
     // Usage: cli.js [--profile <profile>] [--loop <delay>] health
   } else if (command === 'health') {
-    const span = tracer.startSpan('CLI.Health');
-    console.log('Requesting server health status...');
+    const span = tracer.startSpan('CLI.Health', {
+      attributes: {
+        [AttrRpcMethod]: 'Health',
+      },
+    });
+
+    logger.info('Requesting server health status...');
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         const health_data = await cryptoLib.healthData();
-        console.log(
+        logger.info(
           'HealthCheck response:',
           JSON.stringify(health_data, null, 2),
         );
         const serving_status =
           HealthCheckResponse_ServingStatus[health_data.status];
-        console.log('Status:', serving_status);
+        logger.info('Status:', serving_status);
         span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
         if (err instanceof Error) {
@@ -235,9 +294,13 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     // Server-side benchmark (self-test)
     // Usage: cli.js [--profile <profile>] benchmark
   } else if (command === 'benchmark') {
-    const span = tracer.startSpan('CLI.Benchmark');
+    const span = tracer.startSpan('CLI.Benchmark', {
+      attributes: {
+        [AttrRpcMethod]: 'Benchmark',
+      },
+    });
 
-    console.log('Running server-side benchmarks...');
+    logger.info('Running server-side benchmarks...');
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
@@ -253,11 +316,18 @@ async function execute(cryptoLib: CryptoBrokerClient) {
             },
           },
         };
+
         // benchmark request
         const benchmarkResponse = await cryptoLib.benchmarkData(payload);
         console.log(
           'Benchmark response:\n',
           JSON.stringify(benchmarkResponse, null, 2),
+        );
+
+        // set additional tracing attribute
+        span.setAttribute(
+          AttrCryptoBenchmarkResultsSize,
+          benchmarkResponse.benchmarkResults.length,
         );
         span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
@@ -276,11 +346,11 @@ async function execute(cryptoLib: CryptoBrokerClient) {
 async function main() {
   // signal handling
   process.on('SIGINT', () => {
-    console.log('Received SIGINT, exiting...');
+    logger.info('Received SIGINT, exiting...');
     process.exit(0);
   });
   process.on('SIGTERM', () => {
-    console.log('Received SIGTERM, exiting...');
+    logger.info('Received SIGTERM, exiting...');
     process.exit(0);
   });
 
@@ -298,13 +368,14 @@ async function main() {
       await execute(cryptoLib);
     }
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     process.exit(1);
   } finally {
     await tracingProvider.shutdown();
+    await loggingProvider.shutdown();
   }
 }
 
 main().catch((err) => {
-  console.error('Error:', err);
+  logger.error('Error:', err);
 });

@@ -2,13 +2,6 @@ version: '3'
 
 vars:
   PROTOBUF_VERSION: "32.1"
-  OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4317" # Valid URL (only used when OTLP exporter is enabled)
-  OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION: "Api-Token [TOKEN]" # Authorization header for OTLP exporter
-  OTEL_SERVICE_NAME: "crypto-broker-cli-js"
-  OTEL_SERVICE_VERSION: "0.2.0"
-  OTEL_TRACES_EXPORTER: "console" # 'otlphttp', 'otlpgrpc', 'otlpproto', 'console', or comma-separated list like 'console,otlphttp', 'console,otlpgrpc'
-  OTEL_TRACES_SAMPLER: "always_off" # always_on, always_off, traceidratio, parentbased_always_on, parentbased_always_off, parentbased_traceidratio.
-  OTEL_TRACES_SAMPLER_ARG: "0.1" # Sampling ratio (0.0-1.0) when using ratio-based samplers like traceidratio or parentbased_traceidratio.
   # GNU grep support depending on OS
   GREP_CMD:
     sh: |
@@ -16,6 +9,8 @@ vars:
         Darwin*) echo ggrep ;;
         Linux*) echo grep ;;
       esac
+
+dotenv: ['.env']
 
 tasks:
   ################# Development Tools ####################
@@ -57,41 +52,23 @@ tasks:
     deps: [build]
     desc: "Test hashing command with Default profile"
     cmds:
-      - |
-        OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
-        OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
-        OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
-        OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
-        OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
-        OTEL_TRACES_SAMPLER={{.OTEL_TRACES_SAMPLER}} \
-        OTEL_TRACES_SAMPLER_ARG={{.OTEL_TRACES_SAMPLER_ARG}} \
-        node ./dist/cli.js --profile=Default hash "Hello"
+      - node ./dist/cli.js --profile=Default hash "Hello"
 
   test-sign:
     deps: [build]
     desc: "Test certificate signing command with Default profile"
     cmds:
       - |
-        TMP_DIR=tmp-tests
-        TEST_CA_DIR=../crypto-broker-deployment/testing/certificates/test-ca
-        TEST_CSR_DIR=../crypto-broker-deployment/testing/certificates/test-csr
-        rm -rf $TMP_DIR
-        mkdir -p $TMP_DIR
-        RESPONSE=$( OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
-                    OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
-                    OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
-                    OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
-                    OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
-                    OTEL_TRACES_SAMPLER={{.OTEL_TRACES_SAMPLER}} \
-                    OTEL_TRACES_SAMPLER_ARG={{.OTEL_TRACES_SAMPLER_ARG}} \
-                    node ./dist/cli.js --profile=Default sign \
+        rm -rf $TEST_OUTPUT_DIR
+        mkdir -p $TEST_OUTPUT_DIR
+        RESPONSE=$( node ./dist/cli.js --profile=Default sign \
                     --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
                     --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
                     --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem)
         if echo "$RESPONSE" | {{.GREP_CMD}} -E 'Sign [Rr]esponse'; then
           SIGNED_CERTIFICATE=$(echo "$RESPONSE" | {{.GREP_CMD}} -oP '\"signedCertificate\":\s?"\K[^"]+')
-          printf "$SIGNED_CERTIFICATE" > $TMP_DIR/cert-response.pem
-          openssl x509 -inform PEM -in $TMP_DIR/cert-response.pem -text
+          printf "$SIGNED_CERTIFICATE" > $TEST_OUTPUT_DIR/cert-response.pem
+          openssl x509 -inform PEM -in $TEST_OUTPUT_DIR/cert-response.pem -text
         else
           echo -e "Certificate signing failed"
         fi
@@ -100,29 +77,13 @@ tasks:
     deps: [build]
     desc: "Requests the server status using the CLI's health command"
     cmds:
-      - |
-        OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
-        OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
-        OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
-        OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
-        OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
-        OTEL_TRACES_SAMPLER={{.OTEL_TRACES_SAMPLER}} \
-        OTEL_TRACES_SAMPLER_ARG={{.OTEL_TRACES_SAMPLER_ARG}} \
-        node ./dist/cli.js health
+      - node ./dist/cli.js health
 
   test-benchmark:
     deps: [build]
     desc: "Test benchmark command to request a server-side benchmark"
     cmds:
-      - |
-        OTEL_EXPORTER_OTLP_ENDPOINT={{.OTEL_EXPORTER_OTLP_ENDPOINT}} \
-        OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION="{{.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION}}" \
-        OTEL_SERVICE_NAME={{.OTEL_SERVICE_NAME}} \
-        OTEL_SERVICE_VERSION={{.OTEL_SERVICE_VERSION}} \
-        OTEL_TRACES_EXPORTER={{.OTEL_TRACES_EXPORTER}} \
-        OTEL_TRACES_SAMPLER={{.OTEL_TRACES_SAMPLER}} \
-        OTEL_TRACES_SAMPLER_ARG={{.OTEL_TRACES_SAMPLER_ARG}} \
-        node ./dist/cli.js benchmark
+      - ./dist/cli.js benchmark
 
   ################# Continuous Improvement Tasks ####################
   format:
