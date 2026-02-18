@@ -8,7 +8,7 @@ import {
   CertEncoding,
   HashPayload,
   SignPayload,
-} from 'cryptobroker-client';
+} from '@open-crypto-broker/cryptobroker-client';
 import {
   AttrCryptoBenchmarkResultsSize,
   AttrCryptoCaCertSize,
@@ -29,7 +29,7 @@ import {
   ArgumentDefaultsHelpFormatter,
   ArgumentTypeError,
 } from 'argparse';
-import { HealthCheckResponse_ServingStatus } from 'cryptobroker-client';
+import { HealthCheckResponse_ServingStatus } from '@open-crypto-broker/cryptobroker-client';
 import { createLogger, transports } from 'winston';
 const logger = createLogger({
   transports: [new transports.Console()],
@@ -273,13 +273,13 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         const health_data = await cryptoLib.healthData();
-        logger.info(
+        console.info(
           'HealthCheck response:',
           JSON.stringify(health_data, null, 2),
         );
         const serving_status =
           HealthCheckResponse_ServingStatus[health_data.status];
-        logger.info('Status:', serving_status);
+        console.info(`Status: ${serving_status}`);
         span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
         if (err instanceof Error) {
@@ -377,5 +377,5 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error('Error:', err);
+  logger.error(`Error: ${err}`);
 });
