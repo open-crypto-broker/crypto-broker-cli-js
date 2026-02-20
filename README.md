@@ -1,3 +1,5 @@
+> **IMPORTANT NOTE**: This application is NOT intended for use in a production environment. 
+
 # Crypto Broker CLI (TS)
 
 ## Usage
