@@ -30,8 +30,11 @@ tasks:
   ################# Build Node.js CLI test app ####################
   build:
     desc: "Builds the js files including declarations and CLI"
+    vars:
+      USE_LOCAL_LIB: '{{.USE_LOCAL_CLIENT}}'
     cmds:
       - npm install
+      - '{{if eq .USE_LOCAL_CLIENT "true"}}npm link @open-crypto-broker/cryptobroker-client{{end}}'
       - npm run build
 
   build-docker:
