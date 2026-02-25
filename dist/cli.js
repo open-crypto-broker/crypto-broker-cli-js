@@ -2,12 +2,12 @@
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { CryptoBrokerClient, CertEncoding, } from 'cryptobroker-client';
+import { CryptoBrokerClient, CertEncoding, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignedCertSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError, } from 'argparse';
-import { HealthCheckResponse_ServingStatus } from 'cryptobroker-client';
+import { HealthCheckResponse_ServingStatus } from '@open-crypto-broker/cryptobroker-client';
 import { createLogger, transports } from 'winston';
 const logger = createLogger({
     transports: [new transports.Console()],
@@ -229,9 +229,9 @@ async function execute(cryptoLib) {
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
                 const health_data = await cryptoLib.healthData();
-                logger.info('HealthCheck response:', JSON.stringify(health_data, null, 2));
+                console.info('HealthCheck response:', JSON.stringify(health_data, null, 2));
                 const serving_status = HealthCheckResponse_ServingStatus[health_data.status];
-                logger.info('Status:', serving_status);
+                console.info(`Status: ${serving_status}`);
                 span.setStatus({ code: SpanStatusCode.OK });
             }
             catch (err) {
@@ -322,6 +322,6 @@ async function main() {
     }
 }
 main().catch((err) => {
-    logger.error('Error:', err);
+    logger.error(`Error: ${err}`);
 });
 //# sourceMappingURL=cli.js.map

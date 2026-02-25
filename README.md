@@ -1,3 +1,5 @@
+> **IMPORTANT NOTE**: This application is NOT intended for use in a production environment.
+
 # Crypto Broker CLI (TS)
 
 ## Usage
@@ -12,6 +14,16 @@ This section covers how to contribute to the project and develop it further.
 
 In order to develop and build the project locally, you need Node.js installed and run the installation with `npm install`.
 
+This app depends on the published npm package of cryptobroker-client. If you want to develop locally, it is recommended to create a local link between the CLI app and your local cryptobroker-client repository:
+
+```bash
+npm link ~/projects/crypto-broker-client-js      # add global link for npm
+cd ~/projects/cryptobroker-cli-js                # move to cli project
+npm link @open-crypto-broker/cryptobroker-client # use the previously created link in this project
+```
+
+Note: `npm install` will override the link.
+
 For running commands using the `Taskfile` tool, you need to have Taskfile installed. Please check the documentation on [how to install Taskfile](https://taskfile.dev/installation/). If you don't have Taskfile support, you can directly use the commands specified in the Taskfile on your local terminal, provided you meet the requirements.
 
 Please note, that the generated files are supposed to be committed to the repository.
@@ -19,7 +31,7 @@ Please note, that the generated files are supposed to be committed to the reposi
 Additionally, this repository uses husky as a pre-commit hook for the project.
 Make sure to run `npm install` at least once before committing to this repository.
 
-The [server repository](https://github.com/open-crypto-broker/crypto-broker-server/), is recommended in order to perform end-to-end testing.
+The [server repository](https://github.com/open-crypto-broker/crypto-broker-server/) is recommended in order to perform end-to-end testing.
 
 ### Building
 
@@ -29,6 +41,8 @@ To compile the binaries you can use `npm run build`, or simply use the Taskfile:
 ```bash
 task build
 ```
+
+Note: If you want to use your local cryptobroker-client version you can provide `USE_LOCAL_CLIENT=true` to the task (not available for the build-docker task).
 
 For building the Docker image, you need to have Docker/Docker Desktop or any other alternative (e.g. Podman) installed.
 Further, the installation of docker-buildx is recommended. Note: `task tools` will install this.
