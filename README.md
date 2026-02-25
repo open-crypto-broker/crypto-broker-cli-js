@@ -1,4 +1,4 @@
-> **IMPORTANT NOTE**: This application is NOT intended for use in a production environment. 
+> **IMPORTANT NOTE**: This application is NOT intended for use in a production environment.
 
 # Crypto Broker CLI (TS)
 
@@ -45,7 +45,7 @@ task build
 Note: If you want to use your local cryptobroker-client version you can provide `USE_LOCAL_CLIENT=true` to the task (not available for the build-docker task).
 
 For building the Docker image, you need to have Docker/Docker Desktop or any other alternative (e.g. Podman) installed.
-Further, the installation of docker-buildx is recommended. Note: `task tools` will install this. 
+Further, the installation of docker-buildx is recommended. Note: `task tools` will install this.
 
 If you want to additionally invoke the local pipeline, you can run all of these commands with:
 
