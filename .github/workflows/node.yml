@@ -27,6 +27,7 @@ jobs:
         run: npm ci
         env:
           HUSKY: 0
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run CI task from Taskfile (continuous integration)
         run: task ci
