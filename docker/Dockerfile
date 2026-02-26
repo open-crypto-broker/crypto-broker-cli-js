@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy packages, npm config and install dependencies
 COPY package*.json ./
 COPY .npmrc ./
-RUN --mount=type=secret,id=git_npm_token,env=NODE_AUTH_TOKEN \
-    npm --verbose ci
+RUN --mount=type=secret,id=git_npm_token,env=GIT_AUTH_TOKEN \
+    npm ci
 # Copy source code and build
 COPY .. .
 RUN npm run build
@@ -23,7 +23,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.npmrc ./
 
 # Install only production dependencies (use the ignore to skip husky)
-RUN --mount=type=secret,id=git_npm_token,env=NODE_AUTH_TOKEN \
+RUN --mount=type=secret,id=git_npm_token,env=GIT_AUTH_TOKEN \
     npm ci --omit=dev --ignore-scripts
 
 # Run the CLI
