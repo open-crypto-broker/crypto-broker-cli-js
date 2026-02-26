@@ -43,7 +43,11 @@ tasks:
       TAG: '{{.TAG | default "dev"}}'
     dotenv: ['.env']
     cmds:
-      - docker buildx build -f docker/Dockerfile -t ghcr.io/open-crypto-broker/test_app_js:{{.TAG}} .
+      - |
+        docker buildx build \
+        --secret id=git_npm_token,env=GIT_AUTH_TOKEN \
+        -f docker/Dockerfile \
+        -t ghcr.io/open-crypto-broker/test_app_js:{{.TAG}} .
 
   delete-binaries:
     desc: "Delete binary artifacts"
