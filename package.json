@@ -1,6 +1,8 @@
 {
-  "name": "cryptobroker-cli",
-  "bin": "./dist/cli.js",
+  "name": "crypto-broker-cli",
+  "bin": {
+    "cryptobroker-cli": "./dist/cli.js"
+  },
   "version": "0.2.0",
   "main": "./dist/cli.js",
   "type": "module",
@@ -23,24 +25,24 @@
     "crypto",
     "agility"
   ],
-  "authors": [
+  "contributors": [
     "Arturo Guridi",
     "Miyana Stange"
   ],
   "license": "Apache-2.0",
   "description": "Client Javascript repository to interact with a deployed Crypto Broker Server",
   "dependencies": {
-    "@open-crypto-broker/cryptobroker-client": "latest",
+    "@open-crypto-broker/cryptobroker-client": "github:open-crypto-broker/crypto-broker-client-js",
     "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/exporter-logs-otlp-grpc": "^0.212.0",
-    "@opentelemetry/exporter-logs-otlp-http": "^0.212.0",
-    "@opentelemetry/exporter-logs-otlp-proto": "^0.212.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.212.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
-    "@opentelemetry/exporter-trace-otlp-proto": "^0.212.0",
-    "@opentelemetry/instrumentation-winston": "^0.56.0",
+    "@opentelemetry/exporter-logs-otlp-grpc": "^0.213.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.213.0",
+    "@opentelemetry/exporter-logs-otlp-proto": "^0.213.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.213.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.213.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.213.0",
+    "@opentelemetry/instrumentation-winston": "^0.57.0",
     "@opentelemetry/sdk-trace-node": "^2.5.0",
-    "@opentelemetry/winston-transport": "^0.22.0",
+    "@opentelemetry/winston-transport": "^0.23.0",
     "argparse": "^2.0.1",
     "depcheck": "^1.4.7",
     "long": "^5.3.2",
