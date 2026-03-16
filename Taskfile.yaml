@@ -1,7 +1,8 @@
 version: '3'
 
+dotenv: ['.env']
+
 vars:
-  PROTOBUF_VERSION: "32.1"
   # GNU grep support depending on OS
   GREP_CMD:
     sh: |
@@ -10,10 +11,13 @@ vars:
         Linux*) echo grep ;;
       esac
 
-dotenv: ['.env']
-
 tasks:
   ################# Development Tools ####################
+  copy-env:
+    desc: "Copies example environment variables to .env file"
+    cmds:
+      - cp .env.example .env
+
   # Additional resources:
   # - https://docs.docker.com/reference/cli/docker/buildx/
   tools:
@@ -36,7 +40,7 @@ tasks:
       - npm run build
 
   build-docker:
-    desc: "Builds the Docker image for the CLI test app"
+    desc: "Build Docker image for the CLI test app"
     vars:
       TAG: '{{.TAG | default "dev"}}'
     cmds:
@@ -45,17 +49,28 @@ tasks:
         -f docker/Dockerfile \
         -t ghcr.io/open-crypto-broker/test_app_js:{{.TAG}} .
 
-  delete-binaries:
-    desc: "Delete binary artifacts"
+  delete-binary:
+    desc: "Delete binary artifact"
     cmds:
       - npm run clean
 
   ################# Tests ####################
+  test-benchmark:
+    deps: [build]
+    desc: "Test benchmark command to request a server-side benchmark"
+    cmds:
+      - node ./dist/cli.js benchmark
   test-hash:
     deps: [build]
     desc: "Test hashing command with Default profile"
     cmds:
       - node ./dist/cli.js --profile=Default hash "Hello"
+
+  test-health:
+    deps: [build]
+    desc: "Requests the server status using the CLI's health command"
+    cmds:
+      - node ./dist/cli.js health
 
   test-sign:
     deps: [build]
@@ -75,18 +90,6 @@ tasks:
         else
           echo -e "Certificate signing failed"
         fi
-
-  test-health:
-    deps: [build]
-    desc: "Requests the server status using the CLI's health command"
-    cmds:
-      - node ./dist/cli.js health
-
-  test-benchmark:
-    deps: [build]
-    desc: "Test benchmark command to request a server-side benchmark"
-    cmds:
-      - node ./dist/cli.js benchmark
 
   ################# Continuous Improvement Tasks ####################
   format:
