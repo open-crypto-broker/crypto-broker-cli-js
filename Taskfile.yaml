@@ -60,6 +60,7 @@ tasks:
     desc: "Test benchmark command to request a server-side benchmark"
     cmds:
       - node ./dist/cli.js benchmark
+
   test-hash:
     deps: [build]
     desc: "Test hashing command with Default profile"
