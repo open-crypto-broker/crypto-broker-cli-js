@@ -182,7 +182,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       }
     });
     // Certificate signing
-    // Usage: cli.js sign [--profile <profile>] [--encoding={B64,PEM}] [--subject <subject>] [--loop <delay>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
+    // Usage: cli.js [--loop <delay>] sign [--profile <profile>] [--encoding={B64,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
   } else if (command === 'sign') {
     const csrPath = parsed_args.csr;
     const caCertPath = parsed_args.caCert;
