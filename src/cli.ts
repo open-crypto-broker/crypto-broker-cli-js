@@ -348,7 +348,8 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       } finally {
         const end = process.hrtime.bigint();
         logDuration('Health Status', start, end);
-        span.end();      }
+        span.end();
+      }
     });
   }
 }

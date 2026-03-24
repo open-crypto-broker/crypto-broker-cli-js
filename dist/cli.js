@@ -127,9 +127,6 @@ async function execute(cryptoLib) {
                     [AttrCryptoHashAlgorithm]: hashResponse.hashAlgorithm,
                     [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
                 });
-                // return only the hash if data-only is set
-                if (parsed_args.data_only)
-                    console.log(hashResponse.hashValue);
                 console.log('Hash response:\n', JSON.stringify(hashResponse, null, 2));
                 span.setStatus({ code: SpanStatusCode.OK });
             }
