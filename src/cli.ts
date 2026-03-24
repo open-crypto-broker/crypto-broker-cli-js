@@ -127,7 +127,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   const profile: string = parsed_args.profile;
 
   // Data hashing
-  // Usage: cli.js [--profile <profile>] [--loop <delay>] hash <data>
+  // Usage: cli.js [--loop <delay>] hash [--profile <profile>] <data>
   if (command === 'hash') {
     const data: string = parsed_args.data;
     const span = tracer.startSpan('CLI.Hash', {
@@ -182,7 +182,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       }
     });
     // Certificate signing
-    // Usage: cli.js [--profile <profile>] [--encoding={B64,PEM}] [--subject <subject>] [--loop <delay>] sign --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
+    // Usage: cli.js sign [--profile <profile>] [--encoding={B64,PEM}] [--subject <subject>] [--loop <delay>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
   } else if (command === 'sign') {
     const csrPath = parsed_args.csr;
     const caCertPath = parsed_args.caCert;
