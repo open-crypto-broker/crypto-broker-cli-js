@@ -40,6 +40,10 @@ function logDuration(label: string, start: bigint, end: bigint) {
   logger.info(`${label} took ${durationMicroS} µs`);
 }
 
+function numToHexString(n: number): string {
+  return n.toString(16).padStart(2, '0');
+}
+
 function init_parser() {
   const parser = new ArgumentParser({
     formatter_class: ArgumentDefaultsHelpFormatter,
@@ -51,11 +55,6 @@ function init_parser() {
   sub_parsers.required = true;
 
   // main parser arguments
-  parser.add_argument('--profile', {
-    help: 'Profile Selection',
-    default: 'Default',
-  });
-
   parser.add_argument('--loop', {
     help: 'Loops the request with the specified delay (in ms).',
     dest: 'delay',
@@ -74,11 +73,27 @@ function init_parser() {
   const hash_parser = sub_parsers.add_parser('hash', {
     help: 'create a hash',
   });
+  hash_parser.add_argument('--profile', {
+    help: 'Profile Selection',
+    default: 'Default',
+  });
   hash_parser.add_argument('data');
 
   // sign sub-parser and arguments
   const sign_parser = sub_parsers.add_parser('sign', {
     help: 'sign a CSR etc',
+  });
+  sign_parser.add_argument('--profile', {
+    help: 'Profile Selection',
+    default: 'Default',
+  });
+  sign_parser.add_argument('--encoding', {
+    default: CertEncoding.PEM,
+    choices: CertEncoding,
+    help: 'Specifies which encoding should be used for the signedCertificate',
+  });
+  sign_parser.add_argument('--subject', {
+    help: 'Subject for the signing request (will overwrite the subject in the CSR)',
   });
   sign_parser.add_argument('--csr', {
     help: 'Path to CSR file',
@@ -91,14 +106,6 @@ function init_parser() {
   sign_parser.add_argument('--caKey', {
     help: 'Path to CA private key file',
     required: true,
-  });
-  sign_parser.add_argument('--encoding', {
-    default: CertEncoding.PEM,
-    choices: CertEncoding,
-    help: 'Specifies which encoding should be used for the signedCertificate',
-  });
-  sign_parser.add_argument('--subject', {
-    help: 'Subject for the signing request (will overwrite the subject in the CSR)',
   });
 
   sub_parsers.add_parser('health', {
@@ -120,7 +127,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   const profile: string = parsed_args.profile;
 
   // Data hashing
-  // Usage: cli.js [--profile <profile>] [--loop <delay>] hash <data>
+  // Usage: cli.js [--loop <delay>] hash [--profile <profile>] <data>
   if (command === 'hash') {
     const data: string = parsed_args.data;
     const span = tracer.startSpan('CLI.Hash', {
@@ -145,7 +152,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
-              traceFlags: span.spanContext().traceFlags.toString(),
+              traceFlags: numToHexString(span.spanContext().traceFlags),
               traceState: span.spanContext().traceState?.serialize() || '',
             },
           },
@@ -160,8 +167,6 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
         });
 
-        // return only the hash if data-only is set
-        if (parsed_args.data_only) console.log(hashResponse.hashValue);
         console.log('Hash response:\n', JSON.stringify(hashResponse, null, 2));
         span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
@@ -177,7 +182,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       }
     });
     // Certificate signing
-    // Usage: cli.js [--profile <profile>] [--loop <delay>] sign --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey> [--encoding={B64,PEM}] [--subject SUBJECT]
+    // Usage: cli.js [--loop <delay>] sign [--profile <profile>] [--encoding={B64,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
   } else if (command === 'sign') {
     const csrPath = parsed_args.csr;
     const caCertPath = parsed_args.caCert;
@@ -221,7 +226,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
-              traceFlags: span.spanContext().traceFlags.toString(),
+              traceFlags: numToHexString(span.spanContext().traceFlags),
               traceState: span.spanContext().traceState?.serialize() || '',
             },
           },
@@ -261,7 +266,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       }
     });
     // Health Status
-    // Usage: cli.js [--profile <profile>] [--loop <delay>] health
+    // Usage: cli.js [--loop <delay>] health
   } else if (command === 'health') {
     const span = tracer.startSpan('CLI.Health', {
       attributes: {
@@ -270,6 +275,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     });
 
     logger.info('Requesting server health status...');
+    const start = process.hrtime.bigint();
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         const health_data = await cryptoLib.healthData();
@@ -288,11 +294,13 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         }
         throw err;
       } finally {
+        const end = process.hrtime.bigint();
+        logDuration('Health Status', start, end);
         span.end();
       }
     });
     // Server-side benchmark (self-test)
-    // Usage: cli.js [--profile <profile>] benchmark
+    // Usage: cli.js benchmark
   } else if (command === 'benchmark') {
     const span = tracer.startSpan('CLI.Benchmark', {
       attributes: {
@@ -301,6 +309,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     });
 
     logger.info('Running server-side benchmarks...');
+    const start = process.hrtime.bigint();
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
@@ -311,7 +320,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
-              traceFlags: span.spanContext().traceFlags.toString(),
+              traceFlags: numToHexString(span.spanContext().traceFlags),
               traceState: span.spanContext().traceState?.serialize() || '',
             },
           },
@@ -337,6 +346,8 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         }
         throw err;
       } finally {
+        const end = process.hrtime.bigint();
+        logDuration('Health Status', start, end);
         span.end();
       }
     });
