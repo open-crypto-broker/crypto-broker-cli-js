@@ -3,7 +3,7 @@
   "bin": {
     "cryptobroker-cli": "./dist/cli.js"
   },
-  "version": "0.2.0",
+  "version": "0.1.0",
   "main": "./dist/cli.js",
   "type": "module",
   "files": [
@@ -61,6 +61,6 @@
     "eslint-plugin-prettier": "^5.5.0",
     "husky": "^9.1.7",
     "prettier": "^3.5.3",
-    "typescript": "5.9.3"
+    "typescript": "^5.9.3"
   }
 }

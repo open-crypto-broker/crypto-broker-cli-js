@@ -65,7 +65,7 @@ tasks:
     deps: [build]
     desc: "Test hashing command with Default profile"
     cmds:
-      - node ./dist/cli.js --profile=Default hash "Hello"
+      - node ./dist/cli.js hash --profile=Default "Hello"
 
   test-health:
     deps: [build]
@@ -80,7 +80,7 @@ tasks:
       - |
         rm -rf $TEST_OUTPUT_DIR
         mkdir -p $TEST_OUTPUT_DIR
-        RESPONSE=$( node ./dist/cli.js --profile=Default sign \
+        RESPONSE=$( node ./dist/cli.js sign --profile=Default \
                     --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
                     --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
                     --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem)
