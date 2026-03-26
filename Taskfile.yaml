@@ -93,6 +93,11 @@ tasks:
         fi
 
   ################# Continuous Improvement Tasks ####################
+  npm-ci:
+    desc: "Applies npm ci to install dependencies based on package-lock.json"
+    cmds:
+      - npm ci
+
   format:
     desc: "Apply formatting rules to Node.js code"
     cmds:
@@ -111,6 +116,7 @@ tasks:
   ci:
     desc: "Runs continuous integration checks on source code"
     cmds:
+    - task: npm-ci
     - task: format
     - task: lint
     - task: vulnerability-check
