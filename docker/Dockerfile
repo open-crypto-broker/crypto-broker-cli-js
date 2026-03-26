@@ -1,5 +1,11 @@
-# Stage 1: Build TypeScript to JavaScript
-FROM node:22 AS builder
+## This Dockerfile builds the Crypto Broker CLI JavaScript/TypeScript test application
+## This is a simple CLI application that can be used to test the Crypto Broker Server. It is not intended for production use.
+
+ARG NODE_VERSION=24
+ARG ALPINE_VERSION=3.23
+
+## Build stage
+FROM node:${NODE_VERSION} AS builder
 
 WORKDIR /app
 
@@ -10,8 +16,8 @@ RUN npm ci
 COPY .. .
 RUN npm run build
 
-# Stage 2: Run the built JS
-FROM node:22-alpine
+## Deploy stage
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION}
 
 WORKDIR /app
 
