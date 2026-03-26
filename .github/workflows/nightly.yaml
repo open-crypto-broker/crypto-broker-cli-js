@@ -1,0 +1,36 @@
+name: Nightly Security Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+
+  workflow_dispatch:
+    inputs:
+      scan_image:
+        description: "Run image scan"
+        type: boolean
+        default: true
+
+      image_name:
+        description: "Image name"
+        type: string
+        default: "ghcr.io/open-crypto-broker/test_app_js"
+
+      scan_directory:
+        description: "Run SBOM scan on directory"
+        type: boolean
+        default: true
+
+      directory_to_scan:
+        description: "Directory to scan"
+        type: string
+        default: "."
+
+jobs:
+  scan:
+    uses: open-crypto-broker/.github/.github/workflows/security-scan.yaml@main
+    with:
+      scan_image: ${{ inputs.scan_image || true }}
+      image_name: ${{ inputs.image_name || 'ghcr.io/open-crypto-broker/test_app_js' }}
+      scan_directory: ${{ inputs.scan_directory || true }}
+      directory_to_scan: ${{ inputs.directory_to_scan || '.' }}
