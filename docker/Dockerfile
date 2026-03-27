@@ -12,21 +12,19 @@ WORKDIR /app
 # Copy packages and install dependencies
 COPY package*.json ./
 RUN npm ci
-# Copy source code and build
+# Copy source code and build + bundle
 COPY .. .
-RUN npm run build
+RUN npm run build \
+    && npx esbuild dist/cli.js --bundle --platform=node --outfile=bin/js-client-cli --format=cjs \
+    && chmod +x bin/js-client-cli
 
 ## Deploy stage
 FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION}
 
 WORKDIR /app
 
-# Copy only built output and dependencies
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
-
-# Install only production dependencies (use the ignore to skip husky)
-RUN npm ci --omit=dev --ignore-scripts
+# Copy only the self-contained bundle
+COPY --from=builder /app/bin/js-client-cli ./js-client-cli
 
 # Run the CLI
-ENTRYPOINT ["node", "dist/cli.js"]
+ENTRYPOINT ["./js-client-cli"]
