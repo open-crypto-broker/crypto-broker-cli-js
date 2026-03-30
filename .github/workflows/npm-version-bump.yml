@@ -1,0 +1,42 @@
+name: NPM Version Bump
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        # Note: use prerelease to increase the counter, release to finalize version
+        description: 'Version (pre(patch/minor/major), prerelease, release)'
+        default: 'prerelease'
+        required: true
+        type: choice
+        options:
+          - prepatch
+          - preminor
+          - premajor
+          - prerelease
+          - release
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    environment: DEPLOYMENT
+    steps:
+      - name: create github token
+        uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.DEPLOYMENT_SECRET }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Run version bump
+        uses: open-crypto-broker/.github/actions/npm-version-bump@main
+        with:
+          version: ${{ inputs.version }}
