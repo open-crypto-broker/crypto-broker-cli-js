@@ -2,7 +2,7 @@ import { AlwaysOnSampler, AlwaysOffSampler, ParentBasedSampler, TraceIdRatioBase
 import { OTLPTraceExporter as GrpcExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPTraceExporter as HttpExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as ProtoExporter } from '@opentelemetry/exporter-trace-otlp-proto';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_SERVICE_NAMESPACE, } from '@opentelemetry/semantic-conventions';
 import { resourceFromAttributes, detectResources, processDetector, } from '@opentelemetry/resources';
 import { trace } from '@opentelemetry/api';
 import { configuration } from './parameters.js';
@@ -95,6 +95,7 @@ if (spanProcessors.length > 0) {
         }).merge(resourceFromAttributes({
             [ATTR_SERVICE_NAME]: configuration.serviceName,
             [ATTR_SERVICE_VERSION]: configuration.serviceVersion,
+            [ATTR_SERVICE_NAMESPACE]: configuration.serviceNamespace,
         })),
         sampler: buildSampler(configuration.tracesSampler),
     });

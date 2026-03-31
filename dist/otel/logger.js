@@ -6,7 +6,7 @@ import { LoggerProvider, BatchLogRecordProcessor, ConsoleLogRecordExporter, } fr
 import { OTLPLogExporter as GrpcExporter } from '@opentelemetry/exporter-logs-otlp-grpc';
 import { OTLPLogExporter as HttpExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPLogExporter as ProtoExporter } from '@opentelemetry/exporter-logs-otlp-proto';
-import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, } from '@opentelemetry/semantic-conventions';
+import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_SERVICE_NAMESPACE, } from '@opentelemetry/semantic-conventions';
 import { configuration } from './parameters.js';
 const buildExporter = (name) => {
     const collectorOptions = {
@@ -60,6 +60,7 @@ const loggingProvider = new LoggerProvider({
     }).merge(resourceFromAttributes({
         [ATTR_SERVICE_NAME]: configuration.serviceName,
         [ATTR_SERVICE_VERSION]: configuration.serviceVersion,
+        [ATTR_SERVICE_NAMESPACE]: configuration.serviceNamespace,
     })),
 });
 logs.setGlobalLoggerProvider(loggingProvider);
