@@ -29,11 +29,19 @@ import {
   ArgumentDefaultsHelpFormatter,
   ArgumentTypeError,
 } from 'argparse';
-import { HealthCheckResponse_ServingStatus } from '@open-crypto-broker/cryptobroker-client';
 import { createLogger, transports } from 'winston';
 const logger = createLogger({
   transports: [new transports.Console()],
 });
+
+enum ServingStatus {
+  UNKNOWN = 0,
+  SERVING = 1,
+  NOT_SERVING = 2,
+  /** SERVICE_UNKNOWN - Used only by the Watch method. */
+  SERVICE_UNKNOWN = 3,
+  UNRECOGNIZED = -1,
+}
 
 function logDuration(label: string, start: bigint, end: bigint) {
   const durationMicroS = (end - start) / BigInt(1000.0);
@@ -138,7 +146,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       },
     });
 
-    console.log(`Hashing '${data}' using "${profile}" profile...`);
+    logger.info(`Hashing using '${profile}' profile...`);
     const start = process.hrtime.bigint();
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
@@ -199,7 +207,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       },
     });
 
-    logger.info(`Signing certificate using "${profile}" profile...`);
+    logger.info(`Signing certificate using '${profile}' profile...`);
     const start = process.hrtime.bigint();
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
@@ -239,9 +247,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         // add subject to payload if it was provided
         if (subject) {
           payload['subject'] = subject;
-          logger.info(
-            `Note: The CSR subject will be overwritten by "${subject}".`,
-          );
+          logger.info(`Note: The CSR subject will be overwritten by argument.`);
         }
         // sign request
         const signResponse = await cryptoLib.signCertificate(payload, options);
@@ -283,8 +289,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           'HealthCheck response:',
           JSON.stringify(health_data, null, 2),
         );
-        const serving_status =
-          HealthCheckResponse_ServingStatus[health_data.status];
+        const serving_status = ServingStatus[health_data.status];
         console.info(`Status: ${serving_status}`);
         span.setStatus({ code: SpanStatusCode.OK });
       } catch (err) {
@@ -365,11 +370,12 @@ async function main() {
     process.exit(0);
   });
 
+  // log otel configuration
+  //const otel_tracer_config;
+
   try {
-    // create new client
-    const cryptoLib = new CryptoBrokerClient();
-    // wait for the connection to become ready
-    await cryptoLib.ready();
+    // create new client (NewLibrary waits for channel readiness)
+    const cryptoLib = await CryptoBrokerClient.NewLibrary();
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

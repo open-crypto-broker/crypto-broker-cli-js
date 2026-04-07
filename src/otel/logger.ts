@@ -18,6 +18,7 @@ import { OTLPLogExporter as ProtoExporter } from '@opentelemetry/exporter-logs-o
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
+  ATTR_SERVICE_NAMESPACE,
 } from '@opentelemetry/semantic-conventions';
 import { configuration } from './parameters.js';
 
@@ -75,6 +76,7 @@ const loggingProvider = new LoggerProvider({
     resourceFromAttributes({
       [ATTR_SERVICE_NAME]: configuration.serviceName,
       [ATTR_SERVICE_VERSION]: configuration.serviceVersion,
+      [ATTR_SERVICE_NAMESPACE]: configuration.serviceNamespace,
     }),
   ),
 });
