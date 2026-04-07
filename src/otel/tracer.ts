@@ -14,6 +14,7 @@ import { OTLPTraceExporter as ProtoExporter } from '@opentelemetry/exporter-trac
 import {
   ATTR_SERVICE_NAME,
   ATTR_SERVICE_VERSION,
+  ATTR_SERVICE_NAMESPACE,
 } from '@opentelemetry/semantic-conventions';
 import {
   resourceFromAttributes,
@@ -117,6 +118,7 @@ if (spanProcessors.length > 0) {
       resourceFromAttributes({
         [ATTR_SERVICE_NAME]: configuration.serviceName,
         [ATTR_SERVICE_VERSION]: configuration.serviceVersion,
+        [ATTR_SERVICE_NAMESPACE]: configuration.serviceNamespace,
       }),
     ),
     sampler: buildSampler(configuration.tracesSampler),

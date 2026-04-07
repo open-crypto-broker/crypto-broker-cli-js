@@ -7,11 +7,19 @@ import { AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySi
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError, } from 'argparse';
-import { HealthCheckResponse_ServingStatus } from '@open-crypto-broker/cryptobroker-client';
 import { createLogger, transports } from 'winston';
 const logger = createLogger({
     transports: [new transports.Console()],
 });
+var ServingStatus;
+(function (ServingStatus) {
+    ServingStatus[ServingStatus["UNKNOWN"] = 0] = "UNKNOWN";
+    ServingStatus[ServingStatus["SERVING"] = 1] = "SERVING";
+    ServingStatus[ServingStatus["NOT_SERVING"] = 2] = "NOT_SERVING";
+    /** SERVICE_UNKNOWN - Used only by the Watch method. */
+    ServingStatus[ServingStatus["SERVICE_UNKNOWN"] = 3] = "SERVICE_UNKNOWN";
+    ServingStatus[ServingStatus["UNRECOGNIZED"] = -1] = "UNRECOGNIZED";
+})(ServingStatus || (ServingStatus = {}));
 function logDuration(label, start, end) {
     const durationMicroS = (end - start) / BigInt(1000.0);
     logger.info(`${label} took ${durationMicroS} µs`);
@@ -101,7 +109,7 @@ async function execute(cryptoLib) {
                 [AttrCryptoInputSize]: data.length,
             },
         });
-        console.log(`Hashing '${data}' using "${profile}" profile...`);
+        logger.info(`Hashing using '${profile}' profile...`);
         const start = process.hrtime.bigint();
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
@@ -161,7 +169,7 @@ async function execute(cryptoLib) {
                 [AttrCryptoProfile]: profile,
             },
         });
-        logger.info(`Signing certificate using "${profile}" profile...`);
+        logger.info(`Signing certificate using '${profile}' profile...`);
         const start = process.hrtime.bigint();
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
@@ -198,7 +206,7 @@ async function execute(cryptoLib) {
                 // add subject to payload if it was provided
                 if (subject) {
                     payload['subject'] = subject;
-                    logger.info(`Note: The CSR subject will be overwritten by "${subject}".`);
+                    logger.info(`Note: The CSR subject will be overwritten by argument.`);
                 }
                 // sign request
                 const signResponse = await cryptoLib.signCertificate(payload, options);
@@ -235,7 +243,7 @@ async function execute(cryptoLib) {
             try {
                 const health_data = await cryptoLib.healthData();
                 console.info('HealthCheck response:', JSON.stringify(health_data, null, 2));
-                const serving_status = HealthCheckResponse_ServingStatus[health_data.status];
+                const serving_status = ServingStatus[health_data.status];
                 console.info(`Status: ${serving_status}`);
                 span.setStatus({ code: SpanStatusCode.OK });
             }
@@ -310,11 +318,11 @@ async function main() {
         logger.info('Received SIGTERM, exiting...');
         process.exit(0);
     });
+    // log otel configuration
+    //const otel_tracer_config;
     try {
-        // create new client
-        const cryptoLib = new CryptoBrokerClient();
-        // wait for the connection to become ready
-        await cryptoLib.ready();
+        // create new client (NewLibrary waits for channel readiness)
+        const cryptoLib = await CryptoBrokerClient.NewLibrary();
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         await execute(cryptoLib);
         while (parsed_args.delay) {
