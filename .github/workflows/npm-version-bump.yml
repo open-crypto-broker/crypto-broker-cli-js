@@ -15,28 +15,30 @@ on:
           - prerelease
           - release
 
-permissions:
-  contents: write
+permissions: {}
 
 jobs:
   bump-version:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     environment: DEPLOYMENT
     steps:
       - name: create github token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
         id: app-token
         with:
           app-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.DEPLOYMENT_SECRET }}
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
 
       - name: Run version bump
-        uses: open-crypto-broker/.github/actions/npm-version-bump@main
+        uses: open-crypto-broker/.github/actions/npm-version-bump@main # nolint # zizmor: ignore[unpinned-uses]
         with:
           version: ${{ inputs.version }}
