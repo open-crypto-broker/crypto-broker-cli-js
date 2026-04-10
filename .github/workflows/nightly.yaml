@@ -26,9 +26,14 @@ on:
         type: string
         default: "."
 
+permissions: {}
+
 jobs:
   scan:
-    uses: open-crypto-broker/.github/.github/workflows/security-scan.yaml@main
+    permissions:
+      security-events: write
+      contents: read
+    uses: open-crypto-broker/.github/.github/workflows/security-scan.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
       scan_image: ${{ inputs.scan_image || true }}
       image_name: ${{ inputs.image_name || 'ghcr.io/open-crypto-broker/test_app_js' }}

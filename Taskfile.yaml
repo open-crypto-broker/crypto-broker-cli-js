@@ -95,6 +95,8 @@ tasks:
   ################# Continuous Improvement Tasks ####################
   npm-ci:
     desc: "Applies npm ci to install dependencies based on package-lock.json"
+    env:
+      HUSKY: 0
     cmds:
       - npm ci
 
