@@ -12,11 +12,6 @@ jobs:
     permissions:
       contents: read
     runs-on: ubuntu-latest
-<<<<<<< HEAD
-=======
-    container:
-        image: node:24
->>>>>>> 163b4d8 (feat: Create self contained node bundle (#27))
 
     steps:
       - name: Checkout repository
@@ -37,13 +32,5 @@ jobs:
           version: '3.x'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-<<<<<<< HEAD
-=======
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
->>>>>>> 163b4d8 (feat: Create self contained node bundle (#27))
       - name: Run CI task from Taskfile (continuous integration)
         run: task ci
