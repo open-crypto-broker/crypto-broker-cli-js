@@ -34,10 +34,16 @@ tasks:
   ################# Build Node.js CLI test app ####################
   build:
     desc: "Builds the js files including declarations and CLI"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
       - npm install
       - '{{if eq .USE_LOCAL_CLIENT "true"}}npm link @open-crypto-broker/cryptobroker-client{{end}}'
       - npm run build
+      - mkdir -p bin
+      - echo '{"type":"commonjs"}' > bin/package.json
+      - npx esbuild dist/cli.js --bundle --platform=node --outfile=bin/{{.APP_NAME}} --format=cjs
+      - chmod +x bin/{{.APP_NAME}}
 
   build-docker:
     desc: "Build Docker image for the CLI test app"
@@ -51,36 +57,47 @@ tasks:
 
   delete-binary:
     desc: "Delete binary artifact"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
       - npm run clean
+      - rm -f bin/{{.APP_NAME}}
 
   ################# Tests ####################
   test-benchmark:
     deps: [build]
     desc: "Test benchmark command to request a server-side benchmark"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - node ./dist/cli.js benchmark
+      - ./bin/{{.APP_NAME}} benchmark
 
   test-hash:
     deps: [build]
     desc: "Test hashing command with Default profile"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - node ./dist/cli.js hash --profile=Default "Hello"
+      - ./bin/{{.APP_NAME}} hash --profile=Default "Hello"
 
   test-health:
     deps: [build]
     desc: "Requests the server status using the CLI's health command"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - node ./dist/cli.js health
+      - ./bin/{{.APP_NAME}} health
 
   test-sign:
     deps: [build]
     desc: "Test certificate signing command with Default profile"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
       - |
         rm -rf $TEST_OUTPUT_DIR
         mkdir -p $TEST_OUTPUT_DIR
-        RESPONSE=$( node ./dist/cli.js sign --profile=Default \
+        RESPONSE=$( ./bin/{{.APP_NAME}} sign --profile=Default \
                     --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
                     --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
                     --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem)
