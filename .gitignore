@@ -12,6 +12,8 @@ coverage/
 .eslintcache
 # VS Code
 .vscode/*
+# Build output
+bin/
 # Packed files
 *.tgz
 *.idea

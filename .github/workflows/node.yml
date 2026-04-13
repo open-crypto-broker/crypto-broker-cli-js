@@ -9,7 +9,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     container:
-        image: node:22
+        image: node:24
 
     steps:
       - name: Install Task
@@ -22,11 +22,6 @@ jobs:
         uses: actions/checkout@v6
         with:
           submodules: recursive
-
-      - name: Install dependencies (clean install)
-        run: npm ci
-        env:
-          HUSKY: 0
 
       - name: Run CI task from Taskfile (continuous integration)
         run: task ci
