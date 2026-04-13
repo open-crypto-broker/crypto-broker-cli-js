@@ -28,16 +28,16 @@ const buildExporter = (name: string) => {
   };
   switch (name) {
     default:
-      console.warn(`"${name}" is not a valid log exporter value. Skipping...`);
+      console.error(`"${name}" is not a valid log exporter value. Skipping...`);
     // eslint-disable-next-line no-fallthrough
     case 'none':
-      console.log('Using no log exporter.');
+      console.error('Using no log exporter.');
       return undefined;
     case 'console':
-      console.log('Registered console log exporter.');
+      console.error('Registered console log exporter.');
       return new ConsoleLogRecordExporter();
     case 'otlpgrpc':
-      console.log('Registered grpc log exporter.');
+      console.error('Registered grpc log exporter.');
       return new GrpcExporter(collectorOptions);
     case 'otlphttp':
       if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
@@ -46,7 +46,7 @@ const buildExporter = (name: string) => {
         };
       }
       collectorOptions.url += '/v1/logs';
-      console.log('Registered http log exporter.');
+      console.error('Registered http log exporter.');
       return new HttpExporter(collectorOptions);
     case 'otlpproto':
       if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
@@ -54,7 +54,7 @@ const buildExporter = (name: string) => {
           Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
         };
       }
-      console.log('Registered protobuf log exporter.');
+      console.error('Registered protobuf log exporter.');
       return new ProtoExporter(collectorOptions);
   }
 };

@@ -30,18 +30,18 @@ const buildExporter = (name: string) => {
   };
   switch (name) {
     default:
-      console.warn(
+      console.error(
         `"${name}" is not a valid trace exporter value. Skipping...`,
       );
     // eslint-disable-next-line no-fallthrough
     case 'none':
-      console.debug('Using no trace exporter.');
+      console.error('Using no trace exporter.');
       return undefined;
     case 'console':
-      console.debug('Registered console trace exporter.');
+      console.error('Registered console trace exporter.');
       return new ConsoleSpanExporter();
     case 'otlpgrpc':
-      console.debug('Registered grpc trace exporter.');
+      console.error('Registered grpc trace exporter.');
       return new GrpcExporter(collectorOptions);
     case 'otlphttp':
       if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
@@ -50,7 +50,7 @@ const buildExporter = (name: string) => {
         };
       }
       collectorOptions.url += '/v1/traces';
-      console.debug('Registered http trace exporter.');
+      console.error('Registered http trace exporter.');
       return new HttpExporter(collectorOptions);
     case 'otlpproto':
       if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
@@ -58,7 +58,7 @@ const buildExporter = (name: string) => {
           Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
         };
       }
-      console.debug('Registered protobuf trace exporter.');
+      console.error('Registered protobuf trace exporter.');
       return new ProtoExporter(collectorOptions);
   }
 };
@@ -70,26 +70,26 @@ const buildSampler = (name: string) => {
     // eslint-disable-next-line no-fallthrough
     case 'always':
     case 'always_on':
-      console.debug('always_on sampler configured.');
+      console.error('always_on sampler configured.');
       return new AlwaysOnSampler();
     case 'never':
     case 'always_off':
-      console.debug('always_off sampler configured.');
+      console.error('always_off sampler configured.');
       return new AlwaysOffSampler();
     case 'traceidratio':
     case 'ratio': {
-      console.debug('traceidratio sampler configured.');
+      console.error('traceidratio sampler configured.');
       const ratio = parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG ?? '1.0');
       return new TraceIdRatioBasedSampler(ratio);
     }
     case 'parentbased_always_on':
-      console.debug('parentbased_always_on sampler configured.');
+      console.error('parentbased_always_on sampler configured.');
       return new ParentBasedSampler({ root: new AlwaysOnSampler() });
     case 'parentbased_always_off':
-      console.debug('parentbased_always_off sampler configured.');
+      console.error('parentbased_always_off sampler configured.');
       return new ParentBasedSampler({ root: new AlwaysOffSampler() });
     case 'parentbased_traceidratio': {
-      console.debug('parentbased_traceidratio sampler configured.');
+      console.error('parentbased_traceidratio sampler configured.');
       const pb_ratio = parseFloat(process.env.OTEL_TRACES_SAMPLER_ARG ?? '1.0');
       return new ParentBasedSampler({
         root: new TraceIdRatioBasedSampler(pb_ratio),
