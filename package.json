@@ -29,6 +29,9 @@
     "Arturo Guridi",
     "Miyana Stange"
   ],
+  "engines": {
+    "node": ">=24"
+  },
   "license": "Apache-2.0",
   "description": "Client Javascript repository to interact with a deployed Crypto Broker Server",
   "dependencies": {
