@@ -23,6 +23,9 @@ FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION}
 
 WORKDIR /app
 
+# Upgrade Alpine system packages to patch known vulnerabilities
+RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+
 # Copy only the self-contained bundle
 COPY --from=builder /app/bin/js-client-cli ./js-client-cli
 
