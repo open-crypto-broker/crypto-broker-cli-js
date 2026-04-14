@@ -135,7 +135,7 @@ async function execute(cryptoLib) {
                     [AttrCryptoHashAlgorithm]: hashResponse.hashAlgorithm,
                     [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
                 });
-                console.log('Hash response:\n', JSON.stringify(hashResponse, null, 2));
+                console.log(JSON.stringify(hashResponse, null, 2));
                 span.setStatus({ code: SpanStatusCode.OK });
             }
             catch (err) {
@@ -210,7 +210,7 @@ async function execute(cryptoLib) {
                 }
                 // sign request
                 const signResponse = await cryptoLib.signCertificate(payload, options);
-                console.log('Sign response:\n', JSON.stringify(signResponse, null, 2));
+                console.log(JSON.stringify(signResponse, null, 2));
                 // set additional tracing attribute
                 span.setAttribute(AttrCryptoSignedCertSize, signResponse.signedCertificate.length);
                 span.setStatus({ code: SpanStatusCode.OK });
@@ -241,10 +241,12 @@ async function execute(cryptoLib) {
         const start = process.hrtime.bigint();
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
-                const health_data = await cryptoLib.healthData();
-                console.info('HealthCheck response:', JSON.stringify(health_data, null, 2));
-                const serving_status = ServingStatus[health_data.status];
-                console.info(`Status: ${serving_status}`);
+                const healthResponse = await cryptoLib.healthData();
+                const prettyData = {
+                    ...healthResponse,
+                    status: ServingStatus[healthResponse.status],
+                };
+                console.log(JSON.stringify(prettyData, null, 2));
                 span.setStatus({ code: SpanStatusCode.OK });
             }
             catch (err) {
@@ -288,7 +290,10 @@ async function execute(cryptoLib) {
                 };
                 // benchmark request
                 const benchmarkResponse = await cryptoLib.benchmarkData(payload);
-                console.log('Benchmark response:\n', JSON.parse(benchmarkResponse.benchmarkResults));
+                const prettyResponse = {
+                    benchmarkResults: JSON.parse(benchmarkResponse.benchmarkResults),
+                };
+                console.log(JSON.stringify(prettyResponse, null, 2));
                 // set additional tracing attribute
                 span.setAttribute(AttrCryptoBenchmarkResultsSize, benchmarkResponse.benchmarkResults.length);
                 span.setStatus({ code: SpanStatusCode.OK });

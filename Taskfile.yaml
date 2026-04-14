@@ -22,7 +22,7 @@ tasks:
   # - https://docs.docker.com/reference/cli/docker/buildx/
   tools:
     desc: "Download tools required for development"
-    deps: [install-docker-buildx]
+    deps: [install-docker-buildx, install-jq]
 
   # Install docker-buildx
   install-docker-buildx:
@@ -30,6 +30,13 @@ tasks:
     platforms: ["linux/amd64"]
     cmds:
       - apt install docker-buildx
+
+  # Install jq
+  install-jq:
+    desc: "Install jq on Ubuntu"
+    platforms: ["linux/amd64"]
+    cmds:
+      - apt install jq
 
   ################# Build Node.js CLI test app ####################
   build:
@@ -70,7 +77,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} benchmark
+      - ./bin/{{.APP_NAME}} benchmark | jq -r '. | select(.benchmarkResults) // empty'
 
   test-hash:
     deps: [build]
@@ -78,7 +85,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} hash --profile=Default "Hello"
+      - ./bin/{{.APP_NAME}} hash --profile=Default "Hello" | jq -r '. | select(.hashValue) // empty'
 
   test-health:
     deps: [build]
@@ -86,7 +93,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} health
+      - ./bin/{{.APP_NAME}} health | jq '. | select(.status) // empty'
 
   test-sign:
     deps: [build]
@@ -97,16 +104,17 @@ tasks:
       - |
         rm -rf $TEST_OUTPUT_DIR
         mkdir -p $TEST_OUTPUT_DIR
-        RESPONSE=$( ./bin/{{.APP_NAME}} sign --profile=Default \
-                    --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
-                    --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
-                    --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem)
-        if echo "$RESPONSE" | {{.GREP_CMD}} -E 'Sign [Rr]esponse'; then
-          SIGNED_CERTIFICATE=$(echo "$RESPONSE" | {{.GREP_CMD}} -oP '\"signedCertificate\":\s?"\K[^"]+')
-          printf "$SIGNED_CERTIFICATE" > $TEST_OUTPUT_DIR/cert-response.pem
+        SIGNED_CERTIFICATE=$( ./bin/{{.APP_NAME}} sign --profile=Default \
+          --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
+          --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
+          --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem \
+          | jq -r '.signedCertificate // empty' )
+
+        if [ -n "$SIGNED_CERTIFICATE" ]; then
+          echo "$SIGNED_CERTIFICATE" > $TEST_OUTPUT_DIR/cert-response.pem && \
           openssl x509 -inform PEM -in $TEST_OUTPUT_DIR/cert-response.pem -text
         else
-          echo -e "Certificate signing failed"
+          echo "Certificate signing failed!"
         fi
 
   ################# Continuous Improvement Tasks ####################
