@@ -8,3 +8,4 @@ export const AttrCryptoBenchmarkResultsSize = 'crypto.benchmark_results_size';
 export const AttrCryptoCsrSize = 'crypto.csr_size';
 export const AttrCryptoCaCertSize = 'crypto.ca_cert_size';
 export const AttrCryptoCaKeySize = 'crypto.ca_key_size';
+export const AttrCorrelationId = 'correlationId';

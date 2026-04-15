@@ -3,7 +3,7 @@ import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { CryptoBrokerClient, CertEncoding, } from '@open-crypto-broker/cryptobroker-client';
-import { AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignedCertSize, AttrRpcMethod, } from './otel/attributes.js';
+import { AttrCorrelationId, AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignedCertSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError, } from 'argparse';
@@ -125,6 +125,7 @@ async function execute(cryptoLib) {
                             spanId: span.spanContext().spanId,
                             traceFlags: numToHexString(span.spanContext().traceFlags),
                             traceState: span.spanContext().traceState?.serialize() || '',
+                            correlationId: uuidv4(),
                         },
                     },
                 };
@@ -132,6 +133,7 @@ async function execute(cryptoLib) {
                 const hashResponse = await cryptoLib.hashData(payload);
                 // set additional tracing attributes
                 span.setAttributes({
+                    [AttrCorrelationId]: hashResponse.metadata?.traceContext?.correlationId,
                     [AttrCryptoHashAlgorithm]: hashResponse.hashAlgorithm,
                     [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
                 });
@@ -196,6 +198,7 @@ async function execute(cryptoLib) {
                             spanId: span.spanContext().spanId,
                             traceFlags: numToHexString(span.spanContext().traceFlags),
                             traceState: span.spanContext().traceState?.serialize() || '',
+                            correlationId: uuidv4(),
                         },
                     },
                     crlDistributionPoints: [
@@ -212,7 +215,10 @@ async function execute(cryptoLib) {
                 const signResponse = await cryptoLib.signCertificate(payload, options);
                 console.log(JSON.stringify(signResponse, null, 2));
                 // set additional tracing attribute
-                span.setAttribute(AttrCryptoSignedCertSize, signResponse.signedCertificate.length);
+                span.setAttributes({
+                    [AttrCorrelationId]: signResponse.metadata?.traceContext?.correlationId,
+                    [AttrCryptoSignedCertSize]: signResponse.signedCertificate.length,
+                });
                 span.setStatus({ code: SpanStatusCode.OK });
             }
             catch (err) {
@@ -285,6 +291,7 @@ async function execute(cryptoLib) {
                             spanId: span.spanContext().spanId,
                             traceFlags: numToHexString(span.spanContext().traceFlags),
                             traceState: span.spanContext().traceState?.serialize() || '',
+                            correlationId: uuidv4(),
                         },
                     },
                 };
@@ -295,7 +302,10 @@ async function execute(cryptoLib) {
                 };
                 console.log(JSON.stringify(prettyResponse, null, 2));
                 // set additional tracing attribute
-                span.setAttribute(AttrCryptoBenchmarkResultsSize, benchmarkResponse.benchmarkResults.length);
+                span.setAttributes({
+                    [AttrCorrelationId]: benchmarkResponse.metadata?.traceContext?.correlationId,
+                    [AttrCryptoBenchmarkResultsSize]: benchmarkResponse.benchmarkResults.length,
+                });
                 span.setStatus({ code: SpanStatusCode.OK });
             }
             catch (err) {
