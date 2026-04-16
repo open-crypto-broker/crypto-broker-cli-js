@@ -33,6 +33,7 @@ jobs:
     permissions:
       security-events: write
       contents: read
+      packages: read # required for pulling images from GHCR
     uses: open-crypto-broker/.github/.github/workflows/security-scan.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
       scan_image: ${{ inputs.scan_image || true }}
