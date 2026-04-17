@@ -138,7 +138,10 @@ async function execute(cryptoLib) {
                     [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
                 });
                 console.log(JSON.stringify(hashResponse, null, 2));
-                span.setStatus({ code: SpanStatusCode.OK });
+                span.setStatus({
+                    code: SpanStatusCode.OK,
+                    message: 'Data Hashing successful.',
+                });
             }
             catch (err) {
                 if (err instanceof Error) {
@@ -219,7 +222,10 @@ async function execute(cryptoLib) {
                     [AttrCorrelationId]: signResponse.metadata?.traceContext?.correlationId,
                     [AttrCryptoSignedCertSize]: signResponse.signedCertificate.length,
                 });
-                span.setStatus({ code: SpanStatusCode.OK });
+                span.setStatus({
+                    code: SpanStatusCode.OK,
+                    message: 'Certificate Signing successful',
+                });
             }
             catch (err) {
                 if (err instanceof Error) {
@@ -253,7 +259,10 @@ async function execute(cryptoLib) {
                     status: ServingStatus[healthResponse.status],
                 };
                 console.log(JSON.stringify(prettyData, null, 2));
-                span.setStatus({ code: SpanStatusCode.OK });
+                span.setStatus({
+                    code: SpanStatusCode.OK,
+                    message: 'Health Request successful.',
+                });
             }
             catch (err) {
                 if (err instanceof Error) {
@@ -306,7 +315,10 @@ async function execute(cryptoLib) {
                     [AttrCorrelationId]: benchmarkResponse.metadata?.traceContext?.correlationId,
                     [AttrCryptoBenchmarkResultsSize]: benchmarkResponse.benchmarkResults.length,
                 });
-                span.setStatus({ code: SpanStatusCode.OK });
+                span.setStatus({
+                    code: SpanStatusCode.OK,
+                    message: 'Benchmark Request successful.',
+                });
             }
             catch (err) {
                 if (err instanceof Error) {

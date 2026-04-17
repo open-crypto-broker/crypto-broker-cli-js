@@ -180,7 +180,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         });
 
         console.log(JSON.stringify(hashResponse, null, 2));
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Data Hashing successful.',
+        });
       } catch (err) {
         if (err instanceof Error) {
           span.recordException(err);
@@ -264,7 +267,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
             signResponse.metadata?.traceContext?.correlationId,
           [AttrCryptoSignedCertSize]: signResponse.signedCertificate.length,
         });
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Certificate Signing successful',
+        });
       } catch (err) {
         if (err instanceof Error) {
           span.recordException(err);
@@ -297,7 +303,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         };
         console.log(JSON.stringify(prettyData, null, 2));
 
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Health Request successful.',
+        });
       } catch (err) {
         if (err instanceof Error) {
           span.recordException(err);
@@ -352,7 +361,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           [AttrCryptoBenchmarkResultsSize]:
             benchmarkResponse.benchmarkResults.length,
         });
-        span.setStatus({ code: SpanStatusCode.OK });
+        span.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Benchmark Request successful.',
+        });
       } catch (err) {
         if (err instanceof Error) {
           span.recordException(err);
