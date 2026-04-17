@@ -8,3 +8,4 @@ export declare const AttrCryptoBenchmarkResultsSize = "crypto.benchmark_results_
 export declare const AttrCryptoCsrSize = "crypto.csr_size";
 export declare const AttrCryptoCaCertSize = "crypto.ca_cert_size";
 export declare const AttrCryptoCaKeySize = "crypto.ca_key_size";
+export declare const AttrCorrelationId = "correlationId";

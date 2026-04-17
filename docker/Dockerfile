@@ -11,9 +11,11 @@ WORKDIR /app
 
 # Copy packages and install dependencies
 COPY package*.json ./
+COPY ../tsconfig.json .
 RUN npm ci
+
 # Copy source code and build + bundle
-COPY .. .
+COPY ../src ./
 RUN npm run build \
     && npx esbuild dist/cli.js --bundle --platform=node --outfile=bin/js-client-cli --format=cjs \
     && chmod +x bin/js-client-cli
