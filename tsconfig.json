@@ -1,11 +1,12 @@
 {
-  "extends": "@tsconfig/node22/tsconfig.json",
+  "extends": "@tsconfig/node24/tsconfig.json",
   "compilerOptions": {
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
     "noImplicitAny": false,
+    "rootDir": "./src",
     "strictNullChecks": true,
     "sourceMap": true,
     "outDir": "./dist",
