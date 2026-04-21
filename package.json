@@ -3,7 +3,7 @@
   "bin": {
     "cryptobroker-cli": "./dist/cli.js"
   },
-  "version": "0.2.0-rc.0",
+  "version": "0.2.0",
   "main": "./dist/cli.js",
   "type": "module",
   "files": [
