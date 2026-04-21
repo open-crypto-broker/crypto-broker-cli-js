@@ -46,6 +46,9 @@ jobs:
   ################################################
   build-binaries:
     needs: metadata
+    permissions:
+      contents: write
+      packages: write
 
     uses: open-crypto-broker/.github/.github/workflows/build-release.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
@@ -59,6 +62,11 @@ jobs:
   ################################################
   release:
     needs: metadata
+    permissions:
+      contents: write
+      packages: write
+      security-events: write
+      id-token: write
 
     uses: open-crypto-broker/.github/.github/workflows/release-docker-security.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:

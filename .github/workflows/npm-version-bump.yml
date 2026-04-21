@@ -36,7 +36,6 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
-          persist-credentials: false
 
       - name: Run version bump
         uses: open-crypto-broker/.github/actions/npm-version-bump@main # nolint # zizmor: ignore[unpinned-uses]
