@@ -97,6 +97,7 @@ jobs:
       packages: write
       security-events: write
       id-token: write
+      attestations: write
 
     uses: open-crypto-broker/.github/.github/workflows/release-docker-security.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
