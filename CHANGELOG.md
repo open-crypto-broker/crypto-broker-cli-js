@@ -3,6 +3,17 @@
 The list of commits in this changelog is automatically generated in the release process.
 The commits follow the Conventional Commit specification.
 
+## [0.2.2] - 2026-04-22
+
+### 🐛 Bug Fixes
+
+- Add attestation permission (#45)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.2.2
+- Bump version to v0.2.2-rc.0
+
 ## [0.2.1] - 2026-04-22
 
 ### 🚀 Features
