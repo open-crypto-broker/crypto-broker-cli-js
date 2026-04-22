@@ -6,7 +6,6 @@ import {
   NodeTracerProvider,
   SpanProcessor,
   BatchSpanProcessor,
-  ConsoleSpanExporter,
 } from '@opentelemetry/sdk-trace-node';
 import { OTLPTraceExporter as GrpcExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPTraceExporter as HttpExporter } from '@opentelemetry/exporter-trace-otlp-http';
@@ -23,6 +22,7 @@ import {
 } from '@opentelemetry/resources';
 import { trace } from '@opentelemetry/api';
 import { configuration } from './parameters.js';
+import { JsonConsoleSpanExporter } from './JsonConsoleSpanExporter.js';
 
 const buildExporter = (name: string) => {
   const collectorOptions = {
@@ -39,7 +39,7 @@ const buildExporter = (name: string) => {
       return undefined;
     case 'console':
       console.error('Registered console trace exporter.');
-      return new ConsoleSpanExporter();
+      return new JsonConsoleSpanExporter();
     case 'otlpgrpc':
       console.error('Registered grpc trace exporter.');
       return new GrpcExporter(collectorOptions);
