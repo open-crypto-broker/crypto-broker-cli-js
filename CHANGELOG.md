@@ -3,6 +3,21 @@
 The list of commits in this changelog is automatically generated in the release process.
 The commits follow the Conventional Commit specification.
 
+## [0.2.1] - 2026-04-22
+
+### 🚀 Features
+
+- Added json console exporter (#43)
+
+### 🐛 Bug Fixes
+
+- Changed docker copy path to adhere to tsc rootDir (#42)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.2.1
+- Bump version to v0.2.1-rc.0
+
 ## [0.2.0] - 2026-04-21
 
 ### 🚀 Features
