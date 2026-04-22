@@ -15,7 +15,7 @@ COPY ../tsconfig.json .
 RUN npm ci
 
 # Copy source code and build + bundle
-COPY ../src ./
+COPY ../src ./src
 RUN npm run build \
     && npx esbuild dist/cli.js --bundle --platform=node --outfile=bin/js-client-cli --format=cjs \
     && chmod +x bin/js-client-cli
