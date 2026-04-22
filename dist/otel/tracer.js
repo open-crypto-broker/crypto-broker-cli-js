@@ -1,4 +1,4 @@
-import { AlwaysOnSampler, AlwaysOffSampler, ParentBasedSampler, TraceIdRatioBasedSampler, NodeTracerProvider, BatchSpanProcessor, ConsoleSpanExporter, } from '@opentelemetry/sdk-trace-node';
+import { AlwaysOnSampler, AlwaysOffSampler, ParentBasedSampler, TraceIdRatioBasedSampler, NodeTracerProvider, BatchSpanProcessor, } from '@opentelemetry/sdk-trace-node';
 import { OTLPTraceExporter as GrpcExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPTraceExporter as HttpExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as ProtoExporter } from '@opentelemetry/exporter-trace-otlp-proto';
@@ -6,6 +6,7 @@ import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_SERVICE_NAMESPACE, } from
 import { resourceFromAttributes, detectResources, processDetector, } from '@opentelemetry/resources';
 import { trace } from '@opentelemetry/api';
 import { configuration } from './parameters.js';
+import { JsonConsoleSpanExporter } from './JsonConsoleSpanExporter.js';
 const buildExporter = (name) => {
     const collectorOptions = {
         url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
@@ -19,7 +20,7 @@ const buildExporter = (name) => {
             return undefined;
         case 'console':
             console.error('Registered console trace exporter.');
-            return new ConsoleSpanExporter();
+            return new JsonConsoleSpanExporter();
         case 'otlpgrpc':
             console.error('Registered grpc trace exporter.');
             return new GrpcExporter(collectorOptions);
