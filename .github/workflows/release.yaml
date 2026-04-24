@@ -93,11 +93,11 @@ jobs:
   build-docker:
     needs: metadata
     permissions:
-      contents: write
+      contents: read
       packages: write
-      security-events: write
       id-token: write
       attestations: write
+      artifact-metadata: write
 
     uses: open-crypto-broker/.github/.github/workflows/release-docker-security.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
