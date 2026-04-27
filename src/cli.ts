@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
@@ -8,6 +9,8 @@ import {
   CertEncoding,
   HashPayload,
   SignPayload,
+  VERSION as CLIENT_VERSION,
+  GIT_COMMIT as CLIENT_GIT_COMMIT,
 } from '@open-crypto-broker/cryptobroker-client';
 import {
   AttrCorrelationId,
@@ -24,7 +27,7 @@ import {
 } from './otel/attributes.js';
 
 import * as fs from 'fs';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import {
   ArgumentParser,
   ArgumentDefaultsHelpFormatter,
@@ -61,7 +64,6 @@ function init_parser() {
     help: 'Command Selection',
     dest: 'command',
   });
-  sub_parsers.required = true;
 
   // main parser arguments
   parser.add_argument('--loop', {
@@ -76,6 +78,9 @@ function init_parser() {
       }
       return int_arg;
     },
+  });
+  sub_parsers.add_parser('version', {
+    help: 'Shows version numbers of client library and CLI.',
   });
 
   // hash sub-parser and arguments
@@ -156,14 +161,14 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           profile: profile,
           input: Buffer.from(data),
           metadata: {
-            id: uuidv4(),
+            id: randomUUID(),
             createdAt: new Date().toString(),
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
               traceFlags: numToHexString(span.spanContext().traceFlags),
               traceState: span.spanContext().traceState?.serialize() || '',
-              correlationId: uuidv4(),
+              correlationId: randomUUID(),
             },
           },
         };
@@ -236,14 +241,14 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           caPrivateKey: caPrivateKey,
           caCert: caCert,
           metadata: {
-            id: uuidv4(),
+            id: randomUUID(),
             createdAt: new Date().toString(),
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
               traceFlags: numToHexString(span.spanContext().traceFlags),
               traceState: span.spanContext().traceState?.serialize() || '',
-              correlationId: uuidv4(),
+              correlationId: randomUUID(),
             },
           },
           crlDistributionPoints: [
@@ -335,14 +340,14 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         // prepare payload
         const payload: BenchmarkPayload = {
           metadata: {
-            id: uuidv4(),
+            id: randomUUID(),
             createdAt: new Date().toString(),
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
               traceFlags: numToHexString(span.spanContext().traceFlags),
               traceState: span.spanContext().traceState?.serialize() || '',
-              correlationId: uuidv4(),
+              correlationId: randomUUID(),
             },
           },
         };
@@ -391,8 +396,16 @@ async function main() {
     process.exit(0);
   });
 
-  // log otel configuration
-  //const otel_tracer_config;
+  if (parsed_args.command === 'version') {
+    const CLI_VERSION =
+      typeof __VERSION__ === 'undefined'
+        ? '<unbundled-dev-version>'
+        : __VERSION__;
+    console.log(
+      `Client library version: ${CLIENT_VERSION}@${CLIENT_GIT_COMMIT}\nCLI version: ${CLI_VERSION}@${__GIT_COMMIT__}`,
+    );
+    process.exit(0);
+  }
 
   try {
     // create new client (NewLibrary waits for channel readiness)

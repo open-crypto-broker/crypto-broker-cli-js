@@ -49,7 +49,7 @@ tasks:
       - npm run build
       - mkdir -p bin
       - echo '{"type":"commonjs"}' > bin/package.json
-      - npx esbuild dist/cli.js --bundle --platform=node --outfile=bin/{{.APP_NAME}} --format=cjs
+      - APP_NAME={{.APP_NAME}} npm run esbuild
       - chmod +x bin/{{.APP_NAME}}
 
   build-docker:
