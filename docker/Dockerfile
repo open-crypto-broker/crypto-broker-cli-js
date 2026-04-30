@@ -11,13 +11,14 @@ WORKDIR /app
 
 # Copy packages and install dependencies
 COPY package*.json ./
-COPY ../tsconfig.json .
+COPY ../tsconfig.json ./
+COPY ../globals.d.ts ./
 RUN npm ci
 
 # Copy source code and build + bundle
 COPY ../src ./src
-RUN npm run build \
-    && npx esbuild dist/cli.js --bundle --platform=node --outfile=bin/js-client-cli --format=cjs \
+RUN npm run build
+RUN APP_NAME='js-client-cli' npm run esbuild \
     && chmod +x bin/js-client-cli
 
 ## Deploy stage
