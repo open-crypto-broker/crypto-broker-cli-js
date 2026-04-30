@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { CryptoBrokerClient, CertEncoding, VERSION as CLIENT_VERSION, GIT_COMMIT as CLIENT_GIT_COMMIT, } from '@open-crypto-broker/cryptobroker-client';
+import { CryptoBrokerClient, CertEncoding, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId, AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignedCertSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
@@ -352,7 +352,7 @@ async function main() {
         const CLI_VERSION = typeof __VERSION__ === 'undefined'
             ? '<unbundled-dev-version>'
             : __VERSION__;
-        console.log(`Client library version: ${CLIENT_VERSION}@${CLIENT_GIT_COMMIT}\nCLI version: ${CLI_VERSION}@${__GIT_COMMIT__}`);
+        console.log(`Client library version: ${CLIENT_VERSION}\nCLI version: ${CLI_VERSION}`);
         process.exit(0);
     }
     try {
