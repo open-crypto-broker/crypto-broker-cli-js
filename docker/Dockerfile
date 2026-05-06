@@ -7,6 +7,8 @@ ARG ALPINE_VERSION=3.23
 ## Build stage
 FROM node:${NODE_VERSION} AS builder
 
+ARG COMMIT
+
 WORKDIR /app
 
 # Copy packages and install dependencies
@@ -18,7 +20,7 @@ RUN npm ci
 # Copy source code and build + bundle
 COPY ../src ./src
 RUN npm run build
-RUN APP_NAME='js-client-cli' npm run esbuild \
+RUN APP_NAME='js-client-cli' GIT_HASH=$COMMIT npm run esbuild \
     && chmod +x bin/js-client-cli
 
 ## Deploy stage

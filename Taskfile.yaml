@@ -60,10 +60,13 @@ tasks:
     desc: "Build Docker image for the CLI test app"
     vars:
       TAG: '{{.TAG | default "dev"}}'
+      GIT_HASH:
+        sh: git rev-parse HEAD
     cmds:
       - |
         docker buildx build \
         -f docker/Dockerfile \
+        --build-arg COMMIT={{.GIT_HASH}} \
         -t ghcr.io/open-crypto-broker/test_app_js:{{.TAG}} .
 
   delete-binary:

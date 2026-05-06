@@ -36,7 +36,7 @@
   "license": "Apache-2.0",
   "description": "Client Javascript repository to interact with a deployed Crypto Broker Server",
   "dependencies": {
-    "@open-crypto-broker/cryptobroker-client": "^0.2.3",
+    "@open-crypto-broker/cryptobroker-client": "github:open-crypto-broker/crypto-broker-client-js#feat/version-git-hash",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-logs-otlp-grpc": "^0.216.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.216.0",
