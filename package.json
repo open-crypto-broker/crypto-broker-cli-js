@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "tsc --declaration",
-    "esbuild": "esbuild dist/cli.js --bundle --platform=node --outfile=bin/$APP_NAME --format=cjs --define:__VERSION__=\\\"${npm_package_version}\\\"",
+    "esbuild": "esbuild dist/cli.js --bundle --platform=node --outfile=bin/$APP_NAME --format=cjs --define:__VERSION__=\\\"${npm_package_version}\\\" --define:__GIT_HASH__=\\\"${GIT_HASH}\\\"",
     "clean": "tsc --build --clean",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "eslint --fix && prettier --write 'src/**/*.{ts,tsx,js,json,md}'",

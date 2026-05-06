@@ -10,6 +10,7 @@ import {
   HashPayload,
   SignPayload,
   VERSION as CLIENT_VERSION,
+  GIT_HASH as CLIENT_HASH,
 } from '@open-crypto-broker/cryptobroker-client';
 import {
   AttrCorrelationId,
@@ -400,8 +401,12 @@ async function main() {
       typeof __VERSION__ === 'undefined'
         ? '<unbundled-dev-version>'
         : __VERSION__;
+    const CLI_HASH =
+      typeof __GIT_HASH__ === 'undefined'
+        ? '<unbundled-git-hash>'
+        : __GIT_HASH__;
     console.log(
-      `Client library version: ${CLIENT_VERSION}\nCLI version: ${CLI_VERSION}`,
+      `Client library version: ${CLIENT_VERSION}@${CLIENT_HASH}\nCLI version: ${CLI_VERSION}@${CLI_HASH}`,
     );
     process.exit(0);
   }
