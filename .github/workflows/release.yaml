@@ -19,7 +19,7 @@ jobs:
   github-release:
     name: Create GitHub Release
     permissions:
-      contents: write
+      contents: write # for creating the GitHub release
     runs-on: ubuntu-latest
 
     steps:
@@ -48,8 +48,9 @@ jobs:
   # Metadata (reusable workflow)
   ################################################
   metadata:
+    name: Release Metadata
     permissions:
-      contents: read
+      contents: read # for checking out code
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
@@ -61,12 +62,14 @@ jobs:
       sbom_file: ${{ steps.meta.outputs.sbom_file }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - id: meta
+      - name: Extract release metadata
+        id: meta
         uses: open-crypto-broker/.github/actions/release-metadata@main # nolint # zizmor: ignore[unpinned-uses]
         with:
           image-base-name: test_app_js
@@ -75,10 +78,11 @@ jobs:
   # Build binaries (reusable workflow)
   ################################################
   build-binaries:
+    name: Build Binaries
     needs: metadata
     permissions:
-      contents: write
-      packages: write
+      contents: write # for uploading release assets
+      packages: write # for pushing Docker images to GHCR
 
     uses: open-crypto-broker/.github/.github/workflows/build-release.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
@@ -91,13 +95,14 @@ jobs:
   # Build Docker + Security scan (reusable workflow)
   ################################################
   build-docker:
+    name: Build Docker and Security Scan
     needs: metadata
     permissions:
-      contents: write
-      packages: write
-      id-token: write
-      attestations: write
-      artifact-metadata: write
+      contents: write # for uploading release assets
+      packages: write # for pushing Docker images to GHCR
+      id-token: write # for OIDC-based attestation signing
+      attestations: write # for creating build attestations
+      artifact-metadata: write # for storing artifact metadata
 
     uses: open-crypto-broker/.github/.github/workflows/release-docker-security.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
