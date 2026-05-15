@@ -15,20 +15,26 @@ on:
           - prerelease
           - release
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
 permissions: {}
 
 jobs:
   bump-version:
+    name: Bump Version
     permissions:
-      contents: write
+      contents: write # for pushing version bump commit and tag
     runs-on: ubuntu-latest
     environment: DEPLOYMENT
+
     steps:
-      - name: create github token
-        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2.2.2
+      - name: Create GitHub token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
         id: app-token
         with:
-          app-id: ${{ vars.APP_ID }}
+          client-id: ${{ vars.APP_ID }}
           private-key: ${{ secrets.DEPLOYMENT_SECRET }}
 
       - name: Checkout repository
@@ -36,6 +42,7 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
+          persist-credentials: false
 
       - name: Run version bump
         uses: open-crypto-broker/.github/actions/npm-version-bump@main # nolint # zizmor: ignore[unpinned-uses]
