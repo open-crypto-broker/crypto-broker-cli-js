@@ -11,7 +11,7 @@
   ],
   "scripts": {
     "build": "tsc --declaration",
-    "esbuild": "esbuild dist/cli.js --bundle --platform=node --outfile=bin/$APP_NAME --format=cjs --define:__VERSION__=\\\"${npm_package_version}\\\"",
+    "esbuild": "esbuild dist/cli.js --bundle --platform=node --outfile=bin/$APP_NAME --format=cjs --define:__VERSION__=\\\"${npm_package_version}\\\" --define:__GIT_HASH__=\\\"${GIT_HASH}\\\"",
     "clean": "tsc --build --clean",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "eslint --fix && prettier --write 'src/**/*.{ts,tsx,js,json,md}'",
@@ -36,7 +36,7 @@
   "license": "Apache-2.0",
   "description": "Client Javascript repository to interact with a deployed Crypto Broker Server",
   "dependencies": {
-    "@open-crypto-broker/cryptobroker-client": "^0.2.3",
+    "@open-crypto-broker/cryptobroker-client": "github:open-crypto-broker/crypto-broker-client-js#feat/version-git-hash",
     "@opentelemetry/api": "^1.9.0",
     "@opentelemetry/exporter-logs-otlp-grpc": "^0.216.0",
     "@opentelemetry/exporter-logs-otlp-http": "^0.216.0",

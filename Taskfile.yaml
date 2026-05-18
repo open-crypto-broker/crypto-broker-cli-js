@@ -45,23 +45,28 @@ tasks:
     desc: "Builds the js files including declarations and CLI"
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
+      GIT_HASH:
+        sh: git rev-parse HEAD
     cmds:
       - npm install
       - '{{if eq .USE_LOCAL_CLIENT "true"}}npm link @open-crypto-broker/cryptobroker-client{{end}}'
       - npm run build
       - mkdir -p bin
       - echo '{"type":"commonjs"}' > bin/package.json
-      - APP_NAME={{.APP_NAME}} npm run esbuild
+      - APP_NAME={{.APP_NAME}} GIT_HASH={{.GIT_HASH}} npm run esbuild
       - chmod +x bin/{{.APP_NAME}}
 
   build-docker:
     desc: "Build Docker image for the CLI test app"
     vars:
       TAG: '{{.TAG | default "dev"}}'
+      GIT_HASH:
+        sh: git rev-parse HEAD
     cmds:
       - |
         docker buildx build \
         -f docker/Dockerfile \
+        --build-arg COMMIT={{.GIT_HASH}} \
         -t ghcr.io/open-crypto-broker/test_app_js:{{.TAG}} .
 
   delete-binary:
