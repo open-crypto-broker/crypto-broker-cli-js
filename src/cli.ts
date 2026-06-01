@@ -405,9 +405,18 @@ async function main() {
       typeof __GIT_HASH__ === 'undefined'
         ? '<unbundled-git-hash>'
         : __GIT_HASH__;
-    console.log(
-      `Client library version: ${CLIENT_VERSION}@${CLIENT_HASH}\nCLI version: ${CLI_VERSION}@${CLI_HASH}`,
-    );
+
+    const versions = {
+      client: {
+        version: `${CLIENT_VERSION}`,
+        git_sha: `${CLIENT_HASH}`,
+      },
+      cli: {
+        version: `${CLI_VERSION}`,
+        git_sha: `${CLI_HASH}`,
+      },
+    };
+    console.log(JSON.stringify(versions, null, 2));
     process.exit(0);
   }
 
