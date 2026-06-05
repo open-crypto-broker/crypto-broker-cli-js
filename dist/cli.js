@@ -409,6 +409,6 @@ async function main() {
     }
 }
 main().catch((err) => {
-    logger.error(`Main Error: ${err.message}`);
+    logger.error(`CLI Error: ${err.message}`);
 });
 //# sourceMappingURL=cli.js.map
