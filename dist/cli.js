@@ -2,12 +2,12 @@
 import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
-import { context, trace, SpanStatusCode } from '@opentelemetry/api';
-import { CryptoBrokerClient, CertEncoding, VERSION as CLIENT_VERSION, GIT_HASH as CLIENT_HASH, } from '@open-crypto-broker/cryptobroker-client';
+import { context, SpanStatusCode, trace } from '@opentelemetry/api';
+import { CertEncoding, CryptoBrokerClient, GIT_HASH as CLIENT_HASH, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId, AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignedCertSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
-import { ArgumentParser, ArgumentDefaultsHelpFormatter, ArgumentTypeError, } from 'argparse';
+import { ArgumentDefaultsHelpFormatter, ArgumentParser, ArgumentTypeError, } from 'argparse';
 import { createLogger, transports } from 'winston';
 const logger = createLogger({
     transports: [new transports.Console()],
@@ -21,6 +21,9 @@ var ServingStatus;
     ServingStatus[ServingStatus["SERVICE_UNKNOWN"] = 3] = "SERVICE_UNKNOWN";
     ServingStatus[ServingStatus["UNRECOGNIZED"] = -1] = "UNRECOGNIZED";
 })(ServingStatus || (ServingStatus = {}));
+function hasErrorCode(code, err) {
+    return typeof err === 'object' && err !== null && code.includes(err['code']);
+}
 function logDuration(label, start, end) {
     const durationMicroS = (end - start) / BigInt(1000.0);
     logger.info(`${label} took ${durationMicroS} µs`);
@@ -122,7 +125,6 @@ async function execute(cryptoLib) {
                     input: Buffer.from(data),
                     metadata: {
                         id: randomUUID(),
-                        createdAt: new Date().toString(),
                         traceContext: {
                             traceId: span.spanContext().traceId,
                             spanId: span.spanContext().spanId,
@@ -198,7 +200,6 @@ async function execute(cryptoLib) {
                     caCert: caCert,
                     metadata: {
                         id: randomUUID(),
-                        createdAt: new Date().toString(),
                         traceContext: {
                             traceId: span.spanContext().traceId,
                             spanId: span.spanContext().spanId,
@@ -297,7 +298,6 @@ async function execute(cryptoLib) {
                 const payload = {
                     metadata: {
                         id: randomUUID(),
-                        createdAt: new Date().toString(),
                         traceContext: {
                             traceId: span.spanContext().traceId,
                             spanId: span.spanContext().spanId,
@@ -374,12 +374,33 @@ async function main() {
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         await execute(cryptoLib);
         while (parsed_args.delay) {
-            await sleep(parsed_args.delay);
-            await execute(cryptoLib);
+            try {
+                await sleep(parsed_args.delay);
+                await execute(cryptoLib);
+            }
+            catch (err) {
+                const expectedErrors = [
+                    'ETIMEDOUT',
+                    'EOPENBREAKER',
+                    'ESEMLOCKED',
+                    'ESHUTDOWN',
+                    14,
+                    8,
+                    10,
+                ];
+                // we allow the expected circuit breaker errors
+                // and service errors the circuit breaker is aware of
+                if (hasErrorCode(expectedErrors, err)) {
+                    logger.error(err.message);
+                    continue;
+                }
+                // otherwise re-throw everything else
+                throw err;
+            }
         }
     }
     catch (err) {
-        logger.error(err);
+        logger.error(err.message);
         process.exit(1);
     }
     finally {
@@ -388,6 +409,6 @@ async function main() {
     }
 }
 main().catch((err) => {
-    logger.error(`Error: ${err}`);
+    logger.error(`Main Error: ${err.message}`);
 });
 //# sourceMappingURL=cli.js.map

@@ -2,15 +2,15 @@
 import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
-import { context, trace, SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
-  CryptoBrokerClient,
   BenchmarkPayload,
   CertEncoding,
+  CryptoBrokerClient,
   HashPayload,
   SignPayload,
-  VERSION as CLIENT_VERSION,
   GIT_HASH as CLIENT_HASH,
+  VERSION as CLIENT_VERSION,
 } from '@open-crypto-broker/cryptobroker-client';
 import {
   AttrCorrelationId,
@@ -29,8 +29,8 @@ import {
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
 import {
-  ArgumentParser,
   ArgumentDefaultsHelpFormatter,
+  ArgumentParser,
   ArgumentTypeError,
 } from 'argparse';
 import { createLogger, transports } from 'winston';
@@ -45,6 +45,10 @@ enum ServingStatus {
   /** SERVICE_UNKNOWN - Used only by the Watch method. */
   SERVICE_UNKNOWN = 3,
   UNRECOGNIZED = -1,
+}
+
+function hasErrorCode(code: (string | number)[], err: unknown): err is Error {
+  return typeof err === 'object' && err !== null && code.includes(err['code']);
 }
 
 function logDuration(label: string, start: bigint, end: bigint) {
@@ -162,7 +166,6 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           input: Buffer.from(data),
           metadata: {
             id: randomUUID(),
-            createdAt: new Date().toString(),
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
@@ -242,7 +245,6 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           caCert: caCert,
           metadata: {
             id: randomUUID(),
-            createdAt: new Date().toString(),
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
@@ -341,7 +343,6 @@ async function execute(cryptoLib: CryptoBrokerClient) {
         const payload: BenchmarkPayload = {
           metadata: {
             id: randomUUID(),
-            createdAt: new Date().toString(),
             traceContext: {
               traceId: span.spanContext().traceId,
               spanId: span.spanContext().spanId,
@@ -428,11 +429,32 @@ async function main() {
 
     await execute(cryptoLib);
     while (parsed_args.delay) {
-      await sleep(parsed_args.delay);
-      await execute(cryptoLib);
+      try {
+        await sleep(parsed_args.delay);
+        await execute(cryptoLib);
+      } catch (err) {
+        const expectedErrors = [
+          'ETIMEDOUT',
+          'EOPENBREAKER',
+          'ESEMLOCKED',
+          'ESHUTDOWN',
+          14,
+          8,
+          10,
+        ];
+        // we allow the expected circuit breaker errors
+        // and service errors the circuit breaker is aware of
+        if (hasErrorCode(expectedErrors, err)) {
+          logger.error((err as Error).message);
+          continue;
+        }
+
+        // otherwise re-throw everything else
+        throw err;
+      }
     }
   } catch (err) {
-    logger.error(err);
+    logger.error((err as Error).message);
     process.exit(1);
   } finally {
     await tracingProvider.shutdown();
@@ -441,5 +463,5 @@ async function main() {
 }
 
 main().catch((err) => {
-  logger.error(`Error: ${err}`);
+  logger.error(`CLI Error: ${(err as Error).message}`);
 });
