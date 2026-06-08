@@ -48,3 +48,4 @@ jobs:
         uses: open-crypto-broker/.github/actions/npm-version-bump@main # nolint # zizmor: ignore[unpinned-uses]
         with:
           version: ${{ inputs.version }}
+          token: ${{ steps.app-token.outputs.token }}
