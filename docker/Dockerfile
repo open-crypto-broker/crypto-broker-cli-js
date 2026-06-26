@@ -2,7 +2,7 @@
 ## This is a simple CLI application that can be used to test the Crypto Broker Server. It is not intended for production use.
 
 ARG NODE_VERSION=24
-ARG ALPINE_VERSION=3.23
+ARG ALPINE_VERSION=3.24
 
 ## Build stage
 FROM node:${NODE_VERSION} AS builder
