@@ -142,7 +142,7 @@ async function execute(cryptoLib) {
                     [AttrCryptoHashAlgorithm]: hashResponse.hashAlgorithm,
                     [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
                 });
-                console.log(JSON.stringify(hashResponse, null, 2));
+                console.log(JSON.stringify(hashResponse));
                 span.setStatus({
                     code: SpanStatusCode.OK,
                     message: 'Data Hashing successful.',
@@ -220,7 +220,7 @@ async function execute(cryptoLib) {
                 }
                 // sign request
                 const signResponse = await cryptoLib.signCertificate(payload, options);
-                console.log(JSON.stringify(signResponse, null, 2));
+                console.log(JSON.stringify(signResponse));
                 // set additional tracing attribute
                 span.setAttributes({
                     [AttrCorrelationId]: signResponse.metadata?.traceContext?.correlationId,
@@ -262,7 +262,7 @@ async function execute(cryptoLib) {
                     ...healthResponse,
                     status: ServingStatus[healthResponse.status],
                 };
-                console.log(JSON.stringify(prettyData, null, 2));
+                console.log(JSON.stringify(prettyData));
                 span.setStatus({
                     code: SpanStatusCode.OK,
                     message: 'Health Request successful.',
@@ -312,7 +312,7 @@ async function execute(cryptoLib) {
                 const prettyResponse = {
                     benchmarkResults: JSON.parse(benchmarkResponse.benchmarkResults),
                 };
-                console.log(JSON.stringify(prettyResponse, null, 2));
+                console.log(JSON.stringify(prettyResponse));
                 // set additional tracing attribute
                 span.setAttributes({
                     [AttrCorrelationId]: benchmarkResponse.metadata?.traceContext?.correlationId,
