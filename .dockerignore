@@ -1,0 +1,24 @@
+# Version control & CI
+.git
+.gitignore
+.github/
+.husky/
+
+# Local env & tooling
+.env
+.env.example
+Taskfile.yaml
+
+# Dependencies & build outputs (reinstalled/rebuilt inside the image)
+node_modules/
+dist/
+bin/
+tmp-tests/
+
+# Docs & licensing (not needed to build the bundle)
+*.md
+LICENSE
+LICENSES/
+
+# The Dockerfile itself lives in docker/
+docker/
