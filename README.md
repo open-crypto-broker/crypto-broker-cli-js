@@ -58,10 +58,10 @@ You can do a local end-to-end testing of the application yourself with the provi
 ```bash
 task test-hash
 # or
-task test-sign
+task test-sign-certificate
 ```
 
-Note: For the sign command, you need to have the [deployment repository](https://github.com/open-crypto-broker/crypto-broker-deployment) in the same parent directory as this repository. Check the command definitions in the `package.json` file to run your own custom commands.
+Note: For the signCertificate command, you need to have the [deployment repository](https://github.com/open-crypto-broker/crypto-broker-deployment) in the same parent directory as this repository. Check the command definitions in the `package.json` file to run your own custom commands.
 
 ## CLI Installation
 
