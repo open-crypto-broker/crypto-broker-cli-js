@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
-import { CryptoBrokerClient, HashOutputFormat, SignCertificateOutputFormat, GIT_HASH as CLIENT_HASH, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
+import { CryptoBrokerClient, HashDataOutputFormat, SignCertificateOutputFormat, GIT_HASH as CLIENT_HASH, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId, AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignCertificateSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
@@ -134,7 +134,7 @@ async function execute(cryptoLib) {
                 const payload = {
                     profile: profile,
                     input: Buffer.from(data),
-                    outputFormat: HashOutputFormat.HEX,
+                    outputFormat: HashDataOutputFormat.HEX,
                     metadata: {
                         id: randomUUID(),
                         traceContext: {
