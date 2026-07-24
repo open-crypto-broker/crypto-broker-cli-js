@@ -3,7 +3,7 @@ import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
-import { CryptoBrokerClient, HashOutputFormat, SignCertificateOutputFormat, GIT_HASH as CLIENT_HASH, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
+import { CryptoBrokerClient, HashDataOutputFormat, SignCertificateOutputFormat, GIT_HASH as CLIENT_HASH, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId, AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignCertificateSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
@@ -65,17 +65,17 @@ function init_parser() {
     sub_parsers.add_parser('version', {
         help: 'Shows version numbers of client library and CLI.',
     });
-    // hash sub-parser and arguments
-    const hash_parser = sub_parsers.add_parser('hash', {
+    // hash data sub-parser and arguments
+    const hash_data_parser = sub_parsers.add_parser('hash-data', {
         help: 'create a hash',
     });
-    hash_parser.add_argument('--profile', {
+    hash_data_parser.add_argument('--profile', {
         help: 'Profile Selection',
         default: 'Default',
     });
-    hash_parser.add_argument('data');
+    hash_data_parser.add_argument('data');
     // sign certificate sub-parser and arguments
-    const sign_certificate_parser = sub_parsers.add_parser('signCertificate', {
+    const sign_certificate_parser = sub_parsers.add_parser('sign-certificate', {
         help: 'sign a certificate from a CSR',
     });
     sign_certificate_parser.add_argument('--profile', {
@@ -116,8 +116,8 @@ async function execute(cryptoLib) {
     const command = parsed_args.command;
     const profile = parsed_args.profile;
     // Data hashing
-    // Usage: cli.js [--loop <delay>] hash [--profile <profile>] <data>
-    if (command === 'hash') {
+    // Usage: cli.js [--loop <delay>] hash-data [--profile <profile>] <data>
+    if (command === 'hash-data') {
         const data = parsed_args.data;
         const span = tracer.startSpan('CLI.Hash', {
             attributes: {
@@ -134,7 +134,7 @@ async function execute(cryptoLib) {
                 const payload = {
                     profile: profile,
                     input: Buffer.from(data),
-                    outputFormat: HashOutputFormat.HEX,
+                    outputFormat: HashDataOutputFormat.HEX,
                     metadata: {
                         id: randomUUID(),
                         traceContext: {
@@ -176,9 +176,9 @@ async function execute(cryptoLib) {
             }
         });
         // Certificate signing
-        // Usage: cli.js [--loop <delay>] signCertificate [--profile <profile>] [--encoding={DER,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
+        // Usage: cli.js [--loop <delay>] sign-certificate [--profile <profile>] [--encoding={DER,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
     }
-    else if (command === 'signCertificate') {
+    else if (command === 'sign-certificate') {
         const csrPath = parsed_args.csr;
         const caCertPath = parsed_args.caCert;
         const signingKeyPath = parsed_args.caKey;

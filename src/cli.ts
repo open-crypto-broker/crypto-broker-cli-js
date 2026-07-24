@@ -6,8 +6,8 @@ import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
   BenchmarkPayload,
   CryptoBrokerClient,
-  HashPayload,
-  HashOutputFormat,
+  HashDataPayload,
+  HashDataOutputFormat,
   SignCertificateOutputFormat,
   SignCertificatePayload,
   GIT_HASH as CLIENT_HASH,
@@ -104,18 +104,18 @@ function init_parser() {
     help: 'Shows version numbers of client library and CLI.',
   });
 
-  // hash sub-parser and arguments
-  const hash_parser = sub_parsers.add_parser('hash', {
+  // hash data sub-parser and arguments
+  const hash_data_parser = sub_parsers.add_parser('hash-data', {
     help: 'create a hash',
   });
-  hash_parser.add_argument('--profile', {
+  hash_data_parser.add_argument('--profile', {
     help: 'Profile Selection',
     default: 'Default',
   });
-  hash_parser.add_argument('data');
+  hash_data_parser.add_argument('data');
 
   // sign certificate sub-parser and arguments
-  const sign_certificate_parser = sub_parsers.add_parser('signCertificate', {
+  const sign_certificate_parser = sub_parsers.add_parser('sign-certificate', {
     help: 'sign a certificate from a CSR',
   });
   sign_certificate_parser.add_argument('--profile', {
@@ -162,8 +162,8 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   const profile: string = parsed_args.profile;
 
   // Data hashing
-  // Usage: cli.js [--loop <delay>] hash [--profile <profile>] <data>
-  if (command === 'hash') {
+  // Usage: cli.js [--loop <delay>] hash-data [--profile <profile>] <data>
+  if (command === 'hash-data') {
     const data: string = parsed_args.data;
     const span = tracer.startSpan('CLI.Hash', {
       attributes: {
@@ -178,10 +178,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
-        const payload: HashPayload = {
+        const payload: HashDataPayload = {
           profile: profile,
           input: Buffer.from(data),
-          outputFormat: HashOutputFormat.HEX,
+          outputFormat: HashDataOutputFormat.HEX,
           metadata: {
             id: randomUUID(),
             traceContext: {
@@ -226,8 +226,8 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       }
     });
     // Certificate signing
-    // Usage: cli.js [--loop <delay>] signCertificate [--profile <profile>] [--encoding={DER,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
-  } else if (command === 'signCertificate') {
+    // Usage: cli.js [--loop <delay>] sign-certificate [--profile <profile>] [--encoding={DER,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
+  } else if (command === 'sign-certificate') {
     const csrPath = parsed_args.csr;
     const caCertPath = parsed_args.caCert;
     const signingKeyPath = parsed_args.caKey;

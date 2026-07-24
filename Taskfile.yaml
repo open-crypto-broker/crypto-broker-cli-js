@@ -86,13 +86,13 @@ tasks:
     cmds:
       - ./bin/{{.APP_NAME}} benchmark | jq -r '. | select(.benchmarkResults) // empty'
 
-  test-hash:
+  test-hash-data:
     deps: [build]
     desc: "Test hashing command with Default profile"
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} hash --profile=Default "Hello" | jq -r '. | select(.hashValue) // empty'
+      - ./bin/{{.APP_NAME}} hash-data --profile=Default "Hello" | jq -r '. | select(.hashValueHex) // empty'
 
   test-health:
     deps: [build]
@@ -111,7 +111,7 @@ tasks:
       - |
         rm -rf $TEST_OUTPUT_DIR
         mkdir -p $TEST_OUTPUT_DIR
-        SIGNED_CERTIFICATE=$( ./bin/{{.APP_NAME}} signCertificate --profile=Default \
+        SIGNED_CERTIFICATE=$( ./bin/{{.APP_NAME}} sign-certificate --profile=Default \
           --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
           --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
           --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem \
