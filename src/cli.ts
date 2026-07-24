@@ -6,8 +6,8 @@ import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
   BenchmarkPayload,
   CryptoBrokerClient,
-  HashDataPayload,
-  HashDataOutputFormat,
+  HashPayload,
+  HashOutputFormat,
   SignCertificateOutputFormat,
   SignCertificatePayload,
   GIT_HASH as CLIENT_HASH,
@@ -178,10 +178,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
-        const payload: HashDataPayload = {
+        const payload: HashPayload = {
           profile: profile,
           input: Buffer.from(data),
-          outputFormat: HashDataOutputFormat.HEX,
+          outputFormat: HashOutputFormat.HEX,
           metadata: {
             id: randomUUID(),
             traceContext: {
