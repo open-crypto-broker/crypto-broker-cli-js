@@ -165,9 +165,9 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   // Usage: cli.js [--loop <delay>] hash-data [--profile <profile>] <data>
   if (command === 'hash-data') {
     const data: string = parsed_args.data;
-    const span = tracer.startSpan('CLI.Hash', {
+    const span = tracer.startSpan('CLI.HashData', {
       attributes: {
-        [AttrRpcMethod]: 'Hash',
+        [AttrRpcMethod]: 'HashData',
         [AttrCryptoProfile]: profile,
         [AttrCryptoInputSize]: data.length,
       },
