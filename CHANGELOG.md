@@ -3,6 +3,27 @@
 The list of commits in this changelog is automatically generated in the release process.
 The commits follow the Conventional Commit specification.
 
+## [0.4.0] - 2026-07-24
+
+### 🚀 Features
+
+- Improve Dockerfile for multi-arch builds (#64)
+
+### 🐛 Bug Fixes
+
+- Limit create-github-app-token permissions (#60)
+
+### 🚜 Refactor
+
+- Rename signed certificate attribute and update CLI commands (#65)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.4.0
+- Bump version to v0.4.0-rc.0
+- Update client dependency to v0.4.0 (#66)
+- Update Alpine in Dockerfile (#62)
+
 ## [0.3.0] - 2026-06-08
 
 ### 🚀 Features
