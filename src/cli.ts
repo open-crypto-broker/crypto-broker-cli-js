@@ -5,10 +5,11 @@ import { loggingProvider } from './otel/logger.js';
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import {
   BenchmarkPayload,
-  CertEncoding,
   CryptoBrokerClient,
-  HashPayload,
-  SignPayload,
+  HashDataPayload,
+  HashDataOutputFormat,
+  SignCertificateOutputFormat,
+  SignCertificatePayload,
   GIT_HASH as CLIENT_HASH,
   VERSION as CLIENT_VERSION,
 } from '@open-crypto-broker/cryptobroker-client';
@@ -22,7 +23,7 @@ import {
   AttrCryptoHashOutputSize,
   AttrCryptoInputSize,
   AttrCryptoProfile,
-  AttrCryptoSignedCertSize,
+  AttrCryptoSignCertificateSize,
   AttrRpcMethod,
 } from './otel/attributes.js';
 
@@ -60,6 +61,22 @@ function numToHexString(n: number): string {
   return n.toString(16).padStart(2, '0');
 }
 
+function parseSignCertificateOutputFormat(
+  value: string,
+): SignCertificateOutputFormat {
+  const outputFormats: Record<string, SignCertificateOutputFormat> = {
+    DER: SignCertificateOutputFormat.DER,
+    PEM: SignCertificateOutputFormat.PEM,
+  };
+  const outputFormat = outputFormats[value.toUpperCase()];
+
+  if (outputFormat === undefined) {
+    throw new ArgumentTypeError('Encoding must be either DER or PEM.');
+  }
+
+  return outputFormat;
+}
+
 function init_parser() {
   const parser = new ArgumentParser({
     formatter_class: ArgumentDefaultsHelpFormatter,
@@ -87,41 +104,41 @@ function init_parser() {
     help: 'Shows version numbers of client library and CLI.',
   });
 
-  // hash sub-parser and arguments
-  const hash_parser = sub_parsers.add_parser('hash', {
+  // hash data sub-parser and arguments
+  const hash_data_parser = sub_parsers.add_parser('hash-data', {
     help: 'create a hash',
   });
-  hash_parser.add_argument('--profile', {
+  hash_data_parser.add_argument('--profile', {
     help: 'Profile Selection',
     default: 'Default',
   });
-  hash_parser.add_argument('data');
+  hash_data_parser.add_argument('data');
 
-  // sign sub-parser and arguments
-  const sign_parser = sub_parsers.add_parser('sign', {
-    help: 'sign a CSR etc',
+  // sign certificate sub-parser and arguments
+  const sign_certificate_parser = sub_parsers.add_parser('sign-certificate', {
+    help: 'sign a certificate from a CSR',
   });
-  sign_parser.add_argument('--profile', {
+  sign_certificate_parser.add_argument('--profile', {
     help: 'Profile Selection',
     default: 'Default',
   });
-  sign_parser.add_argument('--encoding', {
-    default: CertEncoding.PEM,
-    choices: CertEncoding,
-    help: 'Specifies which encoding should be used for the signedCertificate',
+  sign_certificate_parser.add_argument('--encoding', {
+    default: SignCertificateOutputFormat.PEM,
+    type: parseSignCertificateOutputFormat,
+    help: 'Certificate output encoding: DER or PEM.',
   });
-  sign_parser.add_argument('--subject', {
+  sign_certificate_parser.add_argument('--subject', {
     help: 'Subject for the signing request (will overwrite the subject in the CSR)',
   });
-  sign_parser.add_argument('--csr', {
+  sign_certificate_parser.add_argument('--csr', {
     help: 'Path to CSR file',
     required: true,
   });
-  sign_parser.add_argument('--caCert', {
+  sign_certificate_parser.add_argument('--caCert', {
     help: 'Path to CA certificate file',
     required: true,
   });
-  sign_parser.add_argument('--caKey', {
+  sign_certificate_parser.add_argument('--caKey', {
     help: 'Path to CA private key file',
     required: true,
   });
@@ -145,12 +162,12 @@ async function execute(cryptoLib: CryptoBrokerClient) {
   const profile: string = parsed_args.profile;
 
   // Data hashing
-  // Usage: cli.js [--loop <delay>] hash [--profile <profile>] <data>
-  if (command === 'hash') {
+  // Usage: cli.js [--loop <delay>] hash-data [--profile <profile>] <data>
+  if (command === 'hash-data') {
     const data: string = parsed_args.data;
-    const span = tracer.startSpan('CLI.Hash', {
+    const span = tracer.startSpan('CLI.HashData', {
       attributes: {
-        [AttrRpcMethod]: 'Hash',
+        [AttrRpcMethod]: 'HashData',
         [AttrCryptoProfile]: profile,
         [AttrCryptoInputSize]: data.length,
       },
@@ -161,9 +178,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
-        const payload: HashPayload = {
+        const payload: HashDataPayload = {
           profile: profile,
           input: Buffer.from(data),
+          outputFormat: HashDataOutputFormat.HEX,
           metadata: {
             id: randomUUID(),
             traceContext: {
@@ -184,7 +202,10 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           [AttrCorrelationId]:
             hashResponse.metadata?.traceContext?.correlationId,
           [AttrCryptoHashAlgorithm]: hashResponse.hashAlgorithm,
-          [AttrCryptoHashOutputSize]: hashResponse.hashValue.length,
+          [AttrCryptoHashOutputSize]:
+            hashResponse.hashValueHex?.length ??
+            hashResponse.hashValueRaw?.length ??
+            0,
         });
 
         console.log(JSON.stringify(hashResponse));
@@ -205,19 +226,16 @@ async function execute(cryptoLib: CryptoBrokerClient) {
       }
     });
     // Certificate signing
-    // Usage: cli.js [--loop <delay>] sign [--profile <profile>] [--encoding={B64,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
-  } else if (command === 'sign') {
+    // Usage: cli.js [--loop <delay>] sign-certificate [--profile <profile>] [--encoding={DER,PEM}] [--subject <subject>] --csr <path-to-csr> --caCert <path-to-caCert> --caKey <path-to-caKey>
+  } else if (command === 'sign-certificate') {
     const csrPath = parsed_args.csr;
     const caCertPath = parsed_args.caCert;
     const signingKeyPath = parsed_args.caKey;
-    const encoding: CertEncoding = parsed_args.encoding;
+    const outputFormat: SignCertificateOutputFormat = parsed_args.encoding;
     const subject: string = parsed_args.subject;
-    const options = {
-      encoding: encoding,
-    };
-    const span = tracer.startSpan('CLI.Sign', {
+    const span = tracer.startSpan('CLI.SignCertificate', {
       attributes: {
-        [AttrRpcMethod]: 'Sign',
+        [AttrRpcMethod]: 'SignCertificate',
         [AttrCryptoProfile]: profile,
       },
     });
@@ -238,7 +256,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           [AttrCryptoCaKeySize]: caPrivateKey.length,
         });
 
-        const payload: SignPayload = {
+        const payload: SignCertificatePayload = {
           profile: profile,
           csr: csr,
           caPrivateKey: caPrivateKey,
@@ -257,6 +275,7 @@ async function execute(cryptoLib: CryptoBrokerClient) {
             'http://example.com/crls/list1.crl',
             'http://example.com/crls/list2.crl',
           ],
+          outputFormat,
         };
 
         // add subject to payload if it was provided
@@ -264,15 +283,19 @@ async function execute(cryptoLib: CryptoBrokerClient) {
           payload['subject'] = subject;
           logger.info(`Note: The CSR subject will be overwritten by argument.`);
         }
-        // sign request
-        const signResponse = await cryptoLib.signCertificate(payload, options);
-        console.log(JSON.stringify(signResponse));
+        // sign certificate request
+        const signCertificateResponse =
+          await cryptoLib.signCertificate(payload);
+        console.log(JSON.stringify(signCertificateResponse));
 
         // set additional tracing attribute
         span.setAttributes({
           [AttrCorrelationId]:
-            signResponse.metadata?.traceContext?.correlationId,
-          [AttrCryptoSignedCertSize]: signResponse.signedCertificate.length,
+            signCertificateResponse.metadata?.traceContext?.correlationId,
+          [AttrCryptoSignCertificateSize]:
+            signCertificateResponse.pem?.length ??
+            signCertificateResponse.der?.length ??
+            0,
         });
         span.setStatus({
           code: SpanStatusCode.OK,
