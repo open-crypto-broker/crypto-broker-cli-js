@@ -35,11 +35,13 @@ const buildExporter = (name) => {
             console.error('Registered http log exporter.');
             return new HttpExporter(collectorOptions);
         case 'otlpproto':
-            if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
-                collectorOptions['headers'] = {
-                    Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
-                };
+            collectorOptions['headers'] = {
+                'Content-Type': 'application/x-protobuf',
+            };
+            if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION) {
+                collectorOptions['headers']['Authorization'] = process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
             }
+            collectorOptions.url += '/v1/logs';
             console.error('Registered protobuf log exporter.');
             return new ProtoExporter(collectorOptions);
     }
