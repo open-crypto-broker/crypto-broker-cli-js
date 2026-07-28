@@ -84,7 +84,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} benchmark | jq -r '. | select(.benchmarkResults) // select(.level="error") // empty'
+      - ./bin/{{.APP_NAME}} benchmark | jq -r '. | select(.benchmarkResults) // select(.level=="error") // empty'
 
   test-hash-data:
     deps: [build]
@@ -92,7 +92,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} hash-data --profile=Default --output-format=hex "Hello" | jq -r '. | select(.hashValue) // select(.level="error") // empty'
+      - ./bin/{{.APP_NAME}} hash-data --profile=Default --output-format=hex "Hello" | jq -r '. | select(.hashValueHex) // select(.hashValueRaw) // select(.level=="error") // empty'
 
   test-health:
     deps: [build]
@@ -100,7 +100,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} health | jq '. | select(.status) // select(.level="error") // empty'
+      - ./bin/{{.APP_NAME}} health | jq '. | select(.status) // select(.level=="error") // empty'
 
   test-sign-certificate:
     deps: [build]
