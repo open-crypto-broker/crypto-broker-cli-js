@@ -31,7 +31,7 @@ class DurationLogs {
         this.entries.push({ operation: operation, duration: duration });
     }
     get(operation) {
-        return this.entries.filter((entry) => operation && entry.operation === operation);
+        return this.entries.filter((entry) => operation === undefined || entry.operation === operation);
     }
     sum(operation) {
         let sum = 0n;
@@ -106,7 +106,6 @@ function init_parser() {
         help: 'Profile Selection',
         default: 'Default',
     });
-    hash_data_parser.add_argument('data');
     hash_data_parser.add_argument('--output-format', {
         default: 'HEX',
         choices: enumKeysToStringArray(HashDataOutputFormat),
