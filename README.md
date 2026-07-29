@@ -47,6 +47,18 @@ Note: If you want to use your local cryptobroker-client version you can provide 
 For building the Docker image, you need to have Docker/Docker Desktop or any other alternative (e.g. Podman) installed.
 Further, the installation of docker-buildx is recommended. Note: `task tools` will install this.
 
+#### Container runtime user
+
+The image runs as a **non-root** user (uid/gid `1000` by default, the node image's built-in `node` user) and connects to the Crypto Broker server over a shared Unix socket in `/tmp/open-crypto-broker`. The server creates that socket with mode `0600` (owner-only), so **the client must run as the same uid as the server**. Both images default to `1000`, so the out-of-the-box setup works.
+
+If you build the server for a different uid, rebuild this client with the matching `APP_UID` / `APP_GID` build args so it can still connect:
+
+```bash
+docker build -f docker/Dockerfile --build-arg APP_UID=1500 --build-arg APP_GID=1500 -t js-client-cli .
+```
+
+Both containers must also share the same `/tmp` volume (a fresh named volume is recommended) so the client can see the server's socket.
+
 If you want to additionally invoke the local pipeline, you can run all of these commands with:
 
 ```bash
