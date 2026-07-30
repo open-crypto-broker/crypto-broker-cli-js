@@ -40,7 +40,8 @@ const buildExporter = (name) => {
                 'Content-Type': 'application/x-protobuf',
             };
             if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION) {
-                collectorOptions['headers']['Authorization'] = process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
+                collectorOptions['headers']['Authorization'] =
+                    process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
             }
             collectorOptions.url += '/v1/traces';
             console.error('Registered protobuf trace exporter.');
@@ -109,13 +110,11 @@ else {
     console.warn('No valid trace exporter was provided. Using default trace provider.');
     tracingProvider = new NodeTracerProvider();
 }
-// 2. Register the gRPC instrumentation plugin
+// Register the gRPC instrumentation plugin
 // This is the "magic" that automatically injects trace metadata into outbound gRPC calls
 registerInstrumentations({
     tracerProvider: tracingProvider,
-    instrumentations: [
-        new GrpcInstrumentation(),
-    ],
+    instrumentations: [new GrpcInstrumentation()],
 });
 tracingProvider.register();
 const tracer = trace.getTracer(configuration.serviceName);

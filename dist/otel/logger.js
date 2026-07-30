@@ -39,7 +39,8 @@ const buildExporter = (name) => {
                 'Content-Type': 'application/x-protobuf',
             };
             if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION) {
-                collectorOptions['headers']['Authorization'] = process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
+                collectorOptions['headers']['Authorization'] =
+                    process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
             }
             collectorOptions.url += '/v1/logs';
             console.error('Registered protobuf log exporter.');

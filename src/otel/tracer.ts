@@ -59,7 +59,8 @@ const buildExporter = (name: string) => {
         'Content-Type': 'application/x-protobuf',
       };
       if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION) {
-        collectorOptions['headers']['Authorization'] = process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
+        collectorOptions['headers']['Authorization'] =
+          process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
       }
       collectorOptions.url += '/v1/traces';
       console.error('Registered protobuf trace exporter.');
@@ -138,9 +139,7 @@ if (spanProcessors.length > 0) {
 // This is the "magic" that automatically injects trace metadata into outbound gRPC calls
 registerInstrumentations({
   tracerProvider: tracingProvider,
-  instrumentations: [
-    new GrpcInstrumentation(),
-  ],
+  instrumentations: [new GrpcInstrumentation()],
 });
 
 tracingProvider.register();

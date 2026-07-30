@@ -56,13 +56,13 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/eslintrc": "^0.1.0",
     "@eslint/js": "^10.0.1",
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.63.0",
     "@typescript-eslint/parser": "^8.63.0",
-    "depcheck": "^1.4.7",
+    "depcheck": "^0.4.3",
     "esbuild": "^0.28.0",
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.5",

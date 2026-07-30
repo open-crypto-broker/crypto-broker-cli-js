@@ -17,3 +17,5 @@ bin/
 # Packed files
 *.tgz
 *.idea
+# ignore temporary test folder
+tmp-tests/
