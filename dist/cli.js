@@ -7,6 +7,7 @@ import { CryptoBrokerClient, HashDataOutputFormat, SignCertificateOutputFormat, 
 import { AttrCorrelationId, AttrCryptoBenchmarkResultsSize, AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCryptoHashAlgorithm, AttrCryptoHashOutputSize, AttrCryptoInputSize, AttrCryptoProfile, AttrCryptoSignCertificateSize, AttrRpcMethod, } from './otel/attributes.js';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
+import { Bench } from 'tinybench';
 import { ArgumentDefaultsHelpFormatter, ArgumentParser, ArgumentTypeError, } from 'argparse';
 import { createLogger, transports } from 'winston';
 const logger = createLogger({
@@ -21,26 +22,58 @@ var ServingStatus;
     ServingStatus[ServingStatus["SERVICE_UNKNOWN"] = 3] = "SERVICE_UNKNOWN";
     ServingStatus[ServingStatus["UNRECOGNIZED"] = -1] = "UNRECOGNIZED";
 })(ServingStatus || (ServingStatus = {}));
+class DurationLogs {
+    entries;
+    constructor() {
+        this.entries = [];
+    }
+    add(operation, duration) {
+        this.entries.push({ operation: operation, duration: duration });
+    }
+    get(operation) {
+        return this.entries.filter((entry) => operation === undefined || entry.operation === operation);
+    }
+    sum(operation) {
+        let sum = 0n;
+        const filtered = this.entries.filter((entry) => operation === undefined || entry.operation === operation);
+        for (const entry of filtered) {
+            sum += entry.duration;
+        }
+        return sum;
+    }
+    avg(operation) {
+        const filtered = this.entries.filter((entry) => operation === undefined || entry.operation === operation);
+        if (filtered.length == 0) {
+            return BigInt(-1);
+        }
+        return this.sum(operation) / BigInt(filtered.length);
+    }
+    summarizeAvg(operations, title = 'Average Duration Summary') {
+        let summary = title + '\n';
+        for (const operation of operations) {
+            summary += `- ${operation}: ${this.avg(operation)} µs\n`;
+        }
+        return summary;
+    }
+}
+let durationLogs;
 function hasErrorCode(code, err) {
     return typeof err === 'object' && err !== null && code.includes(err['code']);
 }
 function logDuration(label, start, end) {
     const durationMicroS = (end - start) / BigInt(1000.0);
     logger.info(`${label} took ${durationMicroS} µs`);
+    if (typeof durationLogs === 'object') {
+        durationLogs.add(label, durationMicroS);
+    }
 }
 function numToHexString(n) {
     return n.toString(16).padStart(2, '0');
 }
-function parseSignCertificateOutputFormat(value) {
-    const outputFormats = {
-        DER: SignCertificateOutputFormat.DER,
-        PEM: SignCertificateOutputFormat.PEM,
-    };
-    const outputFormat = outputFormats[value.toUpperCase()];
-    if (outputFormat === undefined) {
-        throw new ArgumentTypeError('Encoding must be either DER or PEM.');
-    }
-    return outputFormat;
+function enumKeysToStringArray(enumType) {
+    return Object.keys(enumType)
+        .filter((key) => isNaN(Number(key)))
+        .filter((key) => key !== 'UNRECOGNIZED'); // do not use -1
 }
 function init_parser() {
     const parser = new ArgumentParser({
@@ -67,25 +100,32 @@ function init_parser() {
     });
     // hash data sub-parser and arguments
     const hash_data_parser = sub_parsers.add_parser('hash-data', {
-        help: 'create a hash',
+        help: 'Creates a hash',
     });
     hash_data_parser.add_argument('--profile', {
         help: 'Profile Selection',
         default: 'Default',
     });
+    hash_data_parser.add_argument('--output-format', {
+        default: 'HEX',
+        choices: enumKeysToStringArray(HashDataOutputFormat),
+        type: (str) => str.toUpperCase(),
+        help: 'Specifies which encoding should be used for the hashing operation',
+    });
     hash_data_parser.add_argument('data');
     // sign certificate sub-parser and arguments
     const sign_certificate_parser = sub_parsers.add_parser('sign-certificate', {
-        help: 'sign a certificate from a CSR',
+        help: 'Signs a CSR',
     });
     sign_certificate_parser.add_argument('--profile', {
         help: 'Profile Selection',
         default: 'Default',
     });
     sign_certificate_parser.add_argument('--encoding', {
-        default: SignCertificateOutputFormat.PEM,
-        type: parseSignCertificateOutputFormat,
-        help: 'Certificate output encoding: DER or PEM.',
+        default: 'PEM',
+        choices: enumKeysToStringArray(SignCertificateOutputFormat),
+        type: (str) => str.toUpperCase(),
+        help: 'Specifies which encoding should be used for the signing operation',
     });
     sign_certificate_parser.add_argument('--subject', {
         help: 'Subject for the signing request (will overwrite the subject in the CSR)',
@@ -108,17 +148,35 @@ function init_parser() {
     sub_parsers.add_parser('benchmark', {
         help: 'request server-side benchmark',
     });
+    const benchmark_parser = sub_parsers.add_parser('local-benchmark', {
+        help: 'runs the local benchmark',
+    });
+    benchmark_parser.add_argument('--hashData-data', {
+        help: 'String to be hashed',
+        required: true,
+    });
+    benchmark_parser.add_argument('--signCertificate-csr', {
+        help: 'Path to CSR file',
+        required: true,
+    });
+    benchmark_parser.add_argument('--signCertificate-caCert', {
+        help: 'Path to CA certificate file',
+        required: true,
+    });
+    benchmark_parser.add_argument('--signCertificate-caKey', {
+        help: 'Path to CA private key file',
+        required: true,
+    });
     return parser.parse_args();
 }
-// initializes the parsers
-const parsed_args = init_parser();
-async function execute(cryptoLib) {
+async function execute(cryptoLib, parsed_args) {
     const command = parsed_args.command;
     const profile = parsed_args.profile;
     // Data hashing
     // Usage: cli.js [--loop <delay>] hash-data [--profile <profile>] <data>
     if (command === 'hash-data') {
         const data = parsed_args.data;
+        const format = parsed_args.output_format;
         const span = tracer.startSpan('CLI.HashData', {
             attributes: {
                 [AttrRpcMethod]: 'HashData',
@@ -134,7 +192,6 @@ async function execute(cryptoLib) {
                 const payload = {
                     profile: profile,
                     input: Buffer.from(data),
-                    outputFormat: HashDataOutputFormat.HEX,
                     metadata: {
                         id: randomUUID(),
                         traceContext: {
@@ -145,6 +202,7 @@ async function execute(cryptoLib) {
                             correlationId: randomUUID(),
                         },
                     },
+                    outputFormat: HashDataOutputFormat[format] ?? HashDataOutputFormat.HEX,
                 };
                 // hash request
                 const hashResponse = await cryptoLib.hashData(payload);
@@ -182,7 +240,7 @@ async function execute(cryptoLib) {
         const csrPath = parsed_args.csr;
         const caCertPath = parsed_args.caCert;
         const signingKeyPath = parsed_args.caKey;
-        const outputFormat = parsed_args.encoding;
+        const encoding = parsed_args.encoding;
         const subject = parsed_args.subject;
         const span = tracer.startSpan('CLI.SignCertificate', {
             attributes: {
@@ -223,7 +281,8 @@ async function execute(cryptoLib) {
                         'http://example.com/crls/list1.crl',
                         'http://example.com/crls/list2.crl',
                     ],
-                    outputFormat,
+                    outputFormat: SignCertificateOutputFormat[encoding] ??
+                        SignCertificateOutputFormat.PEM,
                 };
                 // add subject to payload if it was provided
                 if (subject) {
@@ -362,6 +421,8 @@ async function main() {
         logger.info('Received SIGTERM, exiting...');
         process.exit(0);
     });
+    // initializes the parsers
+    const parsed_args = init_parser();
     if (parsed_args.command === 'version') {
         const CLI_VERSION = typeof __VERSION__ === 'undefined'
             ? '<unbundled-dev-version>'
@@ -383,14 +444,56 @@ async function main() {
         process.exit(0);
     }
     try {
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+        if (parsed_args.command === 'local-benchmark') {
+            const cryptoLib = await CryptoBrokerClient.NewLibrary({
+                circuitBreakerOptions: { enabled: false },
+            });
+            const bench = new Bench({
+                name: 'Local CLI-JS Benchmark',
+                iterations: 100,
+            });
+            durationLogs = new DurationLogs();
+            bench
+                .add('hashData', async () => {
+                const args = {
+                    command: 'hash-data',
+                    profile: 'Default',
+                    output_format: 'HEX',
+                    data: parsed_args.hashData_data,
+                };
+                await execute(cryptoLib, args);
+            })
+                .add('signCertificate', async () => {
+                const args = {
+                    command: 'sign-certificate',
+                    profile: 'Default',
+                    csr: parsed_args.signCertificate_csr,
+                    caCert: parsed_args.signCertificate_caCert,
+                    caKey: parsed_args.signCertificate_caKey,
+                    encoding: 'PEM',
+                };
+                await execute(cryptoLib, args);
+            })
+                .add('health', async () => {
+                const args = {
+                    command: 'health',
+                };
+                await execute(cryptoLib, args);
+            });
+            await bench.run();
+            console.log('Benchmark Summary:');
+            console.table(bench.table());
+            console.log(durationLogs.summarizeAvg(['Data Hashing', 'Certificate Signing', 'Health Status'], 'Average gRPC response overhead:'));
+            process.exit(0);
+        }
         // create new client (NewLibrary waits for channel readiness)
         const cryptoLib = await CryptoBrokerClient.NewLibrary();
-        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-        await execute(cryptoLib);
+        await execute(cryptoLib, parsed_args);
         while (parsed_args.delay) {
             try {
                 await sleep(parsed_args.delay);
-                await execute(cryptoLib);
+                await execute(cryptoLib, parsed_args);
             }
             catch (err) {
                 const expectedErrors = [

@@ -84,7 +84,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} benchmark | jq -r '. | select(.benchmarkResults) // empty'
+      - ./bin/{{.APP_NAME}} benchmark | jq -r '. | select(.benchmarkResults) // select(.level=="error") // empty'
 
   test-hash-data:
     deps: [build]
@@ -92,7 +92,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} hash-data --profile=Default "Hello" | jq -r '. | select(.hashValueHex) // empty'
+      - ./bin/{{.APP_NAME}} hash-data --profile=Default --output-format=hex "Hello" | jq -r '. | select(.hashValueHex) // select(.hashValueRaw) // select(.level=="error") // empty'
 
   test-health:
     deps: [build]
@@ -100,7 +100,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} health | jq '. | select(.status) // empty'
+      - ./bin/{{.APP_NAME}} health | jq '. | select(.status) // select(.level=="error") // empty'
 
   test-sign-certificate:
     deps: [build]
@@ -115,7 +115,8 @@ tasks:
           --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
           --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
           --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem \
-          | jq -r '.pem // empty' )
+          --encoding=pem \
+          | jq -r '.pem // .der // empty' )
 
         if [ -n "$SIGNED_CERTIFICATE" ]; then
           echo "$SIGNED_CERTIFICATE" > $TEST_OUTPUT_DIR/cert-response.pem && \
@@ -123,6 +124,19 @@ tasks:
         else
           echo "Certificate signing failed!"
         fi
+
+  run-benchmarks:
+    deps: [build]
+    desc: "Benchmarks application performance with Default profile"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
+    cmds:
+      - |
+        ./bin/{{.APP_NAME}} local-benchmark \
+        --hashData-data="hello benchmark" \
+        --signCertificate-csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
+        --signCertificate-caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
+        --signCertificate-caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem
 
   ################# Continuous Improvement Tasks ####################
   npm-ci:
