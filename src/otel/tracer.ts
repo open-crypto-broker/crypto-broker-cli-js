@@ -7,6 +7,8 @@ import {
   SpanProcessor,
   BatchSpanProcessor,
 } from '@opentelemetry/sdk-trace-node';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { OTLPTraceExporter as GrpcExporter } from '@opentelemetry/exporter-trace-otlp-grpc';
 import { OTLPTraceExporter as HttpExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { OTLPTraceExporter as ProtoExporter } from '@opentelemetry/exporter-trace-otlp-proto';
@@ -53,11 +55,14 @@ const buildExporter = (name: string) => {
       console.error('Registered http trace exporter.');
       return new HttpExporter(collectorOptions);
     case 'otlpproto':
-      if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION !== '') {
-        collectorOptions['headers'] = {
-          Authorization: process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION,
-        };
+      collectorOptions['headers'] = {
+        'Content-Type': 'application/x-protobuf',
+      };
+      if (process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION) {
+        collectorOptions['headers']['Authorization'] =
+          process.env.OTEL_EXPORTER_OTLP_HEADERS_AUTHORIZATION;
       }
+      collectorOptions.url += '/v1/traces';
       console.error('Registered protobuf trace exporter.');
       return new ProtoExporter(collectorOptions);
   }
@@ -129,6 +134,13 @@ if (spanProcessors.length > 0) {
   );
   tracingProvider = new NodeTracerProvider();
 }
+
+// Register the gRPC instrumentation plugin
+// This is the "magic" that automatically injects trace metadata into outbound gRPC calls
+registerInstrumentations({
+  tracerProvider: tracingProvider,
+  instrumentations: [new GrpcInstrumentation()],
+});
 
 tracingProvider.register();
 const tracer = trace.getTracer(configuration.serviceName);
