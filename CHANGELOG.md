@@ -3,6 +3,23 @@
 The list of commits in this changelog is automatically generated in the release process.
 The commits follow the Conventional Commit specification.
 
+## [0.4.1] - 2026-08-03
+
+### 🚀 Features
+
+- Allow distributed trace context propagation for dynatrace (#70)
+- Api update benchmark (#69)
+
+### 🐛 Bug Fixes
+
+- Make uid in Dockerfile configurable (#71)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.4.1
+- Bump version to v0.4.1-rc.0
+- Updated packages, override tslib (#72)
+
 ## [0.4.0] - 2026-07-24
 
 ### 🚀 Features
