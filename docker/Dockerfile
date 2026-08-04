@@ -42,8 +42,16 @@ ARG APP_GID
 
 WORKDIR /app
 
-# Upgrade Alpine system packages to patch known vulnerabilities
-RUN apk update && apk upgrade --no-cache && rm -rf /var/cache/apk/*
+# Upgrade Alpine system packages to patch known vulnerabilities, then remove npm.
+# The entrypoint is a self-contained esbuild bundle executed directly by the
+# `node` binary; npm is never invoked at runtime. Removing npm strips its bundled
+# dependencies from the runtime image so we do not ship tooling the application
+# does not need, shrinking the attack surface and the reported vulnerabilities.
+RUN apk update && apk upgrade --no-cache \
+    && rm -rf /usr/local/lib/node_modules/npm \
+              /usr/local/bin/npm \
+              /usr/local/bin/npx \
+    && rm -rf /var/cache/apk/*
 
 # Copy only the self-contained bundle
 COPY --from=builder /app/bin/js-client-cli ./js-client-cli
