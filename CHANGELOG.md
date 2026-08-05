@@ -3,6 +3,17 @@
 The list of commits in this changelog is automatically generated in the release process.
 The commits follow the Conventional Commit specification.
 
+## [0.4.2] - 2026-08-05
+
+### 🐛 Bug Fixes
+
+- Remove unused npm packages in Dockerfile (#73)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.4.2
+- Bump version to v0.4.2-rc.0
+
 ## [0.4.1] - 2026-08-03
 
 ### 🚀 Features
