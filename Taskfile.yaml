@@ -94,6 +94,22 @@ tasks:
     cmds:
       - ./bin/{{.APP_NAME}} hash-data --profile=Default --output-format=hex "Hello" | jq -r '. | select(.hashValueHex) // select(.hashValueRaw) // select(.level=="error") // empty'
 
+  test-encrypt-data:
+    deps: [build]
+    desc: "Test encryption command with Default profile"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
+    cmds:
+      - ./bin/{{.APP_NAME}} encrypt-data --profile=Default --keyRaw=1619159426d9ac45243d3da9eed51899 --nonce=08edd4dd6bfd0d69275ef2d0 --aad=1af8fbdc64693a719f26baa04f0ce8be "Welcome CryptoBroker" | jq -r '. | select(.ciphertext) // select(.level=="error") // empty'
+
+  test-decrypt-data:
+    deps: [build]
+    desc: "Test decryption command with Default profile"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
+    cmds:
+      - ./bin/{{.APP_NAME}} decrypt-data --profile=Default --keyRaw=1619159426d9ac45243d3da9eed51899 --nonce=08edd4dd6bfd0d69275ef2d0 --aad=1af8fbdc64693a719f26baa04f0ce8be --tag 0e8a5ed855c3f96c2c35db398b714ffa b613ddebb18ad870a69185f1b1015662e3a9a08a | jq -r '. | select(.plaintext) // select(.level=="error") // empty'
+
   test-health:
     deps: [build]
     desc: "Requests the server status using the CLI's health command"
