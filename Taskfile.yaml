@@ -100,7 +100,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} encrypt-data --profile=Default --keyRaw=1619159426d9ac45243d3da9eed51899 --nonce=08edd4dd6bfd0d69275ef2d0 --aad=1af8fbdc64693a719f26baa04f0ce8be "Welcome CryptoBroker" | jq -r '. | select(.ciphertext) // select(.level=="error") // empty'
+      - ./bin/{{.APP_NAME}} encrypt-data --profile=Default --keyRaw=67e1befda6538f162a308bb37b922441bed6e27039a26a48ad8e11c568c4cda0 --nonce=a83f89b37c90f937b8df5011 --aad=36e02c2a81c60eca849739d52dea95f7 "Welcome CryptoBroker" | jq -r '. | select(.ciphertext) // select(.level=="error") // empty'
 
   test-decrypt-data:
     deps: [build]
@@ -108,7 +108,7 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} decrypt-data --profile=Default --keyRaw=1619159426d9ac45243d3da9eed51899 --nonce=08edd4dd6bfd0d69275ef2d0 --aad=1af8fbdc64693a719f26baa04f0ce8be --tag 0e8a5ed855c3f96c2c35db398b714ffa b613ddebb18ad870a69185f1b1015662e3a9a08a | jq -r '. | select(.plaintext) // select(.level=="error") // empty'
+      - ./bin/{{.APP_NAME}} decrypt-data --profile=Default --keyRaw=67e1befda6538f162a308bb37b922441bed6e27039a26a48ad8e11c568c4cda0 --nonce=a83f89b37c90f937b8df5011 --aad=36e02c2a81c60eca849739d52dea95f7 --tag a77b42e960d89683140cae283a87466e 71416b876fb0d65c484ec20106af15a36454743b | jq -r '. | select(.plaintext) // select(.level=="error") // empty'
 
   test-health:
     deps: [build]
