@@ -151,7 +151,6 @@ function init_parser() {
     });
     const encryptData_key_group = encryptData_parser.add_mutually_exclusive_group({ required: true });
     encryptData_key_group.add_argument('--keyId', {
-        type: parseInt,
         help: 'Specifies which key from the KMS is used for encryption',
     });
     encryptData_key_group.add_argument('--keyRaw', {
@@ -424,7 +423,6 @@ async function execute(cryptoLib, parsed_args) {
                         },
                     },
                 };
-                console.error(payload);
                 // encrypt data request
                 const encryptDataResponse = await cryptoLib.encryptData(payload);
                 console.log(JSON.stringify(encryptDataResponse));
@@ -497,7 +495,6 @@ async function execute(cryptoLib, parsed_args) {
                         },
                     },
                 };
-                console.error(payload);
                 // decrypt data request
                 const decryptDataResponse = await cryptoLib.decryptData(payload);
                 console.log(JSON.stringify(decryptDataResponse));
