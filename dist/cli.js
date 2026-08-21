@@ -158,12 +158,13 @@ function init_parser() {
         help: 'Specifies the raw key bytes to be used for encryption (hex-based)',
     });
     encryptData_parser.add_argument('--nonce', {
+        required: true,
         type: (arg) => Buffer.from(arg, 'hex'),
         help: 'Specifies the nonce bytes to be used for encryption (hex-based)',
     });
     encryptData_parser.add_argument('--aad', {
         type: (arg) => Buffer.from(arg, 'hex'),
-        help: "Specifies additional authenticated data to bind to the ciphertext (hex-based) [Only permitted when the profile's NonceStrategy is user-provided.]",
+        help: 'Specifies additional authenticated data to bind to the ciphertext (hex-based)',
     });
     encryptData_parser.add_argument('plaintext', {
         help: 'Specifies the plaintext to be encrypted [Only string-based for this CLI.]',
@@ -185,6 +186,7 @@ function init_parser() {
         help: 'Specifies the raw key bytes to be used for decryption (hex-based)',
     });
     decryptData_parser.add_argument('--nonce', {
+        required: true,
         type: (arg) => Buffer.from(arg, 'hex'),
         help: 'Specifies the nonce bytes to be used for decryption (hex-based)',
     });
@@ -397,21 +399,17 @@ async function execute(cryptoLib, parsed_args) {
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
                 // prepare payload
-                const keySource = {};
-                if (keyId !== undefined)
-                    keySource['keyId'] = keyId;
-                else if (keyRaw !== undefined)
-                    keySource['rawKey'] = keyRaw;
-                const encryptionMetadata = {};
-                if (nonce !== undefined)
-                    encryptionMetadata['nonce'] = nonce;
-                if (aad !== undefined)
-                    encryptionMetadata['aad'] = aad;
                 const payload = {
                     profile: profile,
-                    keySource: keySource,
+                    keySource: {
+                        ...(keyId !== undefined && { keyId: keyId }),
+                        ...(keyRaw !== undefined && { rawKey: keyRaw }),
+                    },
                     plaintext: Buffer.from(plaintext),
-                    encryptMetadata: encryptionMetadata,
+                    encryptMetadata: {
+                        nonce: nonce,
+                        ...(aad !== undefined && { aad }),
+                    },
                     metadata: {
                         id: randomUUID(),
                         traceContext: {
@@ -467,23 +465,18 @@ async function execute(cryptoLib, parsed_args) {
         return context.with(trace.setSpan(context.active(), span), async () => {
             try {
                 // prepare payload
-                const keySource = {};
-                if (keyId !== undefined)
-                    keySource['keyId'] = keyId;
-                else if (keyRaw !== undefined)
-                    keySource['rawKey'] = keyRaw;
-                const decryptionMetadata = {};
-                if (nonce !== undefined)
-                    decryptionMetadata['nonce'] = nonce;
-                if (aad !== undefined)
-                    decryptionMetadata['aad'] = aad;
-                if (tag !== undefined)
-                    decryptionMetadata['tag'] = tag;
                 const payload = {
                     profile: profile,
-                    keySource: keySource,
+                    keySource: {
+                        ...(keyId !== undefined && { keyId: keyId }),
+                        ...(keyRaw !== undefined && { rawKey: keyRaw }),
+                    },
                     ciphertext: Buffer.from(ciphertext),
-                    decryptMetadata: decryptionMetadata,
+                    decryptMetadata: {
+                        nonce: nonce,
+                        ...(aad !== undefined && { aad }),
+                        ...(tag !== undefined && { tag }),
+                    },
                     metadata: {
                         id: randomUUID(),
                         traceContext: {

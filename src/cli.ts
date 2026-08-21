@@ -217,12 +217,13 @@ function init_parser() {
     help: 'Specifies the raw key bytes to be used for encryption (hex-based)',
   });
   encryptData_parser.add_argument('--nonce', {
+    required: true,
     type: (arg: string) => Buffer.from(arg, 'hex'),
     help: 'Specifies the nonce bytes to be used for encryption (hex-based)',
   });
   encryptData_parser.add_argument('--aad', {
     type: (arg: string) => Buffer.from(arg, 'hex'),
-    help: "Specifies additional authenticated data to bind to the ciphertext (hex-based) [Only permitted when the profile's NonceStrategy is user-provided.]",
+    help: 'Specifies additional authenticated data to bind to the ciphertext (hex-based)',
   });
   encryptData_parser.add_argument('plaintext', {
     help: 'Specifies the plaintext to be encrypted [Only string-based for this CLI.]',
@@ -247,6 +248,7 @@ function init_parser() {
     help: 'Specifies the raw key bytes to be used for decryption (hex-based)',
   });
   decryptData_parser.add_argument('--nonce', {
+    required: true,
     type: (arg: string) => Buffer.from(arg, 'hex'),
     help: 'Specifies the nonce bytes to be used for decryption (hex-based)',
   });
@@ -460,11 +462,11 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
     //                                   (--keyId KEY_ID | --keyRaw KEY_RAW)
     //                                   [--nonce NONCE] [--aad AAD] <plaintext>
   } else if (command === 'encrypt-data') {
-    const keyId: string = parsed_args.keyId;
-    const keyRaw: Uint8Array = parsed_args.keyRaw;
+    const keyId: string | undefined = parsed_args.keyId;
+    const keyRaw: Uint8Array | undefined = parsed_args.keyRaw;
     const plaintext: string = parsed_args.plaintext;
     const nonce: Uint8Array = parsed_args.nonce;
-    const aad: Uint8Array = parsed_args.aad;
+    const aad: Uint8Array | undefined = parsed_args.aad;
 
     const span = tracer.startSpan('CLI.EncryptData', {
       attributes: {
@@ -478,18 +480,17 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
-        const keySource = {};
-        if (keyId !== undefined) keySource['keyId'] = keyId;
-        else if (keyRaw !== undefined) keySource['rawKey'] = keyRaw;
-        const encryptionMetadata = {};
-        if (nonce !== undefined) encryptionMetadata['nonce'] = nonce;
-        if (aad !== undefined) encryptionMetadata['aad'] = aad;
-
         const payload: EncryptDataPayload = {
           profile: profile,
-          keySource: keySource,
+          keySource: {
+            ...(keyId !== undefined && { keyId: keyId }),
+            ...(keyRaw !== undefined && { rawKey: keyRaw }),
+          },
           plaintext: Buffer.from(plaintext),
-          encryptMetadata: encryptionMetadata,
+          encryptMetadata: {
+            nonce: nonce,
+            ...(aad !== undefined && { aad }),
+          },
           metadata: {
             id: randomUUID(),
             traceContext: {
@@ -527,12 +528,12 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
     //                                   (--keyId KEY_ID | --keyRaw KEY_RAW)
     //                                   [--nonce NONCE] [--aad AAD] [--tag TAG] <ciphertext>
   } else if (command === 'decrypt-data') {
-    const keyId: string = parsed_args.keyId;
-    const keyRaw: Uint8Array = parsed_args.keyRaw;
+    const keyId: string | undefined = parsed_args.keyId;
+    const keyRaw: Uint8Array | undefined = parsed_args.keyRaw;
     const ciphertext: string = parsed_args.ciphertext;
     const nonce: Uint8Array = parsed_args.nonce;
-    const aad: Uint8Array = parsed_args.aad;
-    const tag: Uint8Array = parsed_args.tag;
+    const aad: Uint8Array | undefined = parsed_args.aad;
+    const tag: Uint8Array | undefined = parsed_args.tag;
 
     const span = tracer.startSpan('CLI.DecryptData', {
       attributes: {
@@ -546,19 +547,18 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
         // prepare payload
-        const keySource = {};
-        if (keyId !== undefined) keySource['keyId'] = keyId;
-        else if (keyRaw !== undefined) keySource['rawKey'] = keyRaw;
-        const decryptionMetadata = {};
-        if (nonce !== undefined) decryptionMetadata['nonce'] = nonce;
-        if (aad !== undefined) decryptionMetadata['aad'] = aad;
-        if (tag !== undefined) decryptionMetadata['tag'] = tag;
-
         const payload: DecryptDataPayload = {
           profile: profile,
-          keySource: keySource,
+          keySource: {
+            ...(keyId !== undefined && { keyId: keyId }),
+            ...(keyRaw !== undefined && { rawKey: keyRaw }),
+          },
           ciphertext: Buffer.from(ciphertext),
-          decryptMetadata: decryptionMetadata,
+          decryptMetadata: {
+            nonce: nonce,
+            ...(aad !== undefined && { aad }),
+            ...(tag !== undefined && { tag }),
+          },
           metadata: {
             id: randomUUID(),
             traceContext: {
