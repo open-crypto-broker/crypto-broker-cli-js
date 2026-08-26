@@ -10,6 +10,8 @@ import {
   HashDataOutputFormat,
   SignCertificateOutputFormat,
   SignCertificatePayload,
+  EncryptDataPayload,
+  DecryptDataPayload,
   GIT_HASH as CLIENT_HASH,
   VERSION as CLIENT_VERSION,
 } from '@open-crypto-broker/cryptobroker-client';
@@ -36,7 +38,6 @@ import {
   ArgumentTypeError,
 } from 'argparse';
 import { createLogger, transports } from 'winston';
-
 const logger = createLogger({
   transports: [new transports.Console()],
 });
@@ -153,49 +154,115 @@ function init_parser() {
   });
 
   // hash data sub-parser and arguments
-  const hash_data_parser = sub_parsers.add_parser('hash-data', {
+  const hashData_parser = sub_parsers.add_parser('hash-data', {
     help: 'Creates a hash',
   });
-  hash_data_parser.add_argument('--profile', {
+  hashData_parser.add_argument('--profile', {
     help: 'Profile Selection',
     default: 'Default',
   });
-  hash_data_parser.add_argument('--output-format', {
+  hashData_parser.add_argument('--output-format', {
     default: 'HEX',
     choices: enumKeysToStringArray(HashDataOutputFormat),
     type: (str: string) => str.toUpperCase(),
     help: 'Specifies which encoding should be used for the hashing operation',
   });
-  hash_data_parser.add_argument('data');
+  hashData_parser.add_argument('data');
 
   // sign certificate sub-parser and arguments
-  const sign_certificate_parser = sub_parsers.add_parser('sign-certificate', {
+  const signCertificate_parser = sub_parsers.add_parser('sign-certificate', {
     help: 'Signs a CSR',
   });
-  sign_certificate_parser.add_argument('--profile', {
+  signCertificate_parser.add_argument('--profile', {
     help: 'Profile Selection',
     default: 'Default',
   });
-  sign_certificate_parser.add_argument('--encoding', {
+  signCertificate_parser.add_argument('--encoding', {
     default: 'PEM',
     choices: enumKeysToStringArray(SignCertificateOutputFormat),
     type: (str: string) => str.toUpperCase(),
     help: 'Specifies which encoding should be used for the signing operation',
   });
-  sign_certificate_parser.add_argument('--subject', {
+  signCertificate_parser.add_argument('--subject', {
     help: 'Subject for the signing request (will overwrite the subject in the CSR)',
   });
-  sign_certificate_parser.add_argument('--csr', {
+  signCertificate_parser.add_argument('--csr', {
     help: 'Path to CSR file',
     required: true,
   });
-  sign_certificate_parser.add_argument('--caCert', {
+  signCertificate_parser.add_argument('--caCert', {
     help: 'Path to CA certificate file',
     required: true,
   });
-  sign_certificate_parser.add_argument('--caKey', {
+  signCertificate_parser.add_argument('--caKey', {
     help: 'Path to CA private key file',
     required: true,
+  });
+
+  const encryptData_parser = sub_parsers.add_parser('encrypt-data', {
+    help: 'Encrypts data',
+  });
+  encryptData_parser.add_argument('--profile', {
+    help: 'Profile Selection',
+    default: 'Default',
+  });
+  const encryptData_key_group = encryptData_parser.add_mutually_exclusive_group(
+    { required: true },
+  );
+  encryptData_key_group.add_argument('--keyId', {
+    help: 'Specifies which key from the KMS is used for encryption',
+  });
+  encryptData_key_group.add_argument('--keyRaw', {
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies the raw key bytes to be used for encryption (hex-based)',
+  });
+  encryptData_parser.add_argument('--nonce', {
+    required: true,
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies the nonce bytes to be used for encryption (hex-based)',
+  });
+  encryptData_parser.add_argument('--aad', {
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies additional authenticated data to bind to the ciphertext (hex-based)',
+  });
+  encryptData_parser.add_argument('plaintext', {
+    help: 'Specifies the plaintext to be encrypted [Only string-based for this CLI.]',
+  });
+
+  const decryptData_parser = sub_parsers.add_parser('decrypt-data', {
+    help: 'Decrypts data',
+  });
+  decryptData_parser.add_argument('--profile', {
+    help: 'Profile Selection',
+    default: 'Default',
+  });
+  const decryptData_key_group = decryptData_parser.add_mutually_exclusive_group(
+    { required: true },
+  );
+  decryptData_key_group.add_argument('--keyId', {
+    type: parseInt,
+    help: 'Specifies which key from the KMS is used for decryption',
+  });
+  decryptData_key_group.add_argument('--keyRaw', {
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies the raw key bytes to be used for decryption (hex-based)',
+  });
+  decryptData_parser.add_argument('--nonce', {
+    required: true,
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies the nonce bytes to be used for decryption (hex-based)',
+  });
+  decryptData_parser.add_argument('--aad', {
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies additional authenticated data for decryption (hex-based)',
+  });
+  decryptData_parser.add_argument('--tag', {
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies authentication tag for decryption (hex-based)',
+  });
+  decryptData_parser.add_argument('ciphertext', {
+    type: (arg: string) => Buffer.from(arg, 'hex'),
+    help: 'Specifies the ciphertext to be decrypted (hex-based)',
   });
 
   sub_parsers.add_parser('health', {
@@ -390,6 +457,141 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
         span.end();
       }
     });
+    // Encrypt Data
+    // Usage: cli.js [--loop <delay>] encrypt-data [--profile PROFILE]
+    //                                   (--keyId KEY_ID | --keyRaw KEY_RAW)
+    //                                   [--nonce NONCE] [--aad AAD] <plaintext>
+  } else if (command === 'encrypt-data') {
+    const keyId: string | undefined = parsed_args.keyId;
+    const keyRaw: Uint8Array | undefined = parsed_args.keyRaw;
+    const plaintext: string = parsed_args.plaintext;
+    const nonce: Uint8Array = parsed_args.nonce;
+    const aad: Uint8Array | undefined = parsed_args.aad;
+
+    const span = tracer.startSpan('CLI.EncryptData', {
+      attributes: {
+        [AttrRpcMethod]: 'EncryptData',
+        [AttrCryptoProfile]: profile,
+      },
+    });
+
+    logger.info(`Encrypting data using '${profile}' profile...`);
+    const start = process.hrtime.bigint();
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      try {
+        // prepare payload
+        const payload: EncryptDataPayload = {
+          profile: profile,
+          keySource: {
+            ...(keyId !== undefined && { keyId: keyId }),
+            ...(keyRaw !== undefined && { rawKey: keyRaw }),
+          },
+          plaintext: Buffer.from(plaintext),
+          encryptMetadata: {
+            nonce: nonce,
+            ...(aad !== undefined && { aad }),
+          },
+          metadata: {
+            id: randomUUID(),
+            traceContext: {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+              traceFlags: numToHexString(span.spanContext().traceFlags),
+              traceState: span.spanContext().traceState?.serialize() || '',
+              correlationId: randomUUID(),
+            },
+          },
+        };
+
+        // encrypt data request
+        const encryptDataResponse = await cryptoLib.encryptData(payload);
+        console.log(JSON.stringify(encryptDataResponse));
+
+        span.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Data Encryption successful',
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          span.recordException(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        }
+        throw err;
+      } finally {
+        const end = process.hrtime.bigint();
+        logDuration('Encrypt Data', start, end);
+        span.end();
+      }
+    });
+    // Decrypt Data
+    // Usage: cli.js [--loop <delay>] decrypt-data [--profile PROFILE]
+    //                                   (--keyId KEY_ID | --keyRaw KEY_RAW)
+    //                                   [--nonce NONCE] [--aad AAD] [--tag TAG] <ciphertext>
+  } else if (command === 'decrypt-data') {
+    const keyId: string | undefined = parsed_args.keyId;
+    const keyRaw: Uint8Array | undefined = parsed_args.keyRaw;
+    const ciphertext: string = parsed_args.ciphertext;
+    const nonce: Uint8Array = parsed_args.nonce;
+    const aad: Uint8Array | undefined = parsed_args.aad;
+    const tag: Uint8Array | undefined = parsed_args.tag;
+
+    const span = tracer.startSpan('CLI.DecryptData', {
+      attributes: {
+        [AttrRpcMethod]: 'DecryptData',
+        [AttrCryptoProfile]: profile,
+      },
+    });
+
+    logger.info(`Decrypting data using '${profile}' profile...`);
+    const start = process.hrtime.bigint();
+    return context.with(trace.setSpan(context.active(), span), async () => {
+      try {
+        // prepare payload
+        const payload: DecryptDataPayload = {
+          profile: profile,
+          keySource: {
+            ...(keyId !== undefined && { keyId: keyId }),
+            ...(keyRaw !== undefined && { rawKey: keyRaw }),
+          },
+          ciphertext: Buffer.from(ciphertext),
+          decryptMetadata: {
+            nonce: nonce,
+            ...(aad !== undefined && { aad }),
+            ...(tag !== undefined && { tag }),
+          },
+          metadata: {
+            id: randomUUID(),
+            traceContext: {
+              traceId: span.spanContext().traceId,
+              spanId: span.spanContext().spanId,
+              traceFlags: numToHexString(span.spanContext().traceFlags),
+              traceState: span.spanContext().traceState?.serialize() || '',
+              correlationId: randomUUID(),
+            },
+          },
+        };
+
+        // decrypt data request
+        const decryptDataResponse = await cryptoLib.decryptData(payload);
+        console.log(JSON.stringify(decryptDataResponse));
+
+        span.setStatus({
+          code: SpanStatusCode.OK,
+          message: 'Data Decryption successful',
+        });
+      } catch (err) {
+        if (err instanceof Error) {
+          span.recordException(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+        }
+        throw err;
+      } finally {
+        const end = process.hrtime.bigint();
+        logDuration('Decrypt Data', start, end);
+        span.end();
+      }
+    });
+
     // Health Status
     // Usage: cli.js [--loop <delay>] health
   } else if (command === 'health') {
