@@ -82,6 +82,8 @@ jobs:
     permissions:
       contents: write # for uploading release assets
       packages: write # for pushing Docker images to GHCR
+      id-token: write # for OIDC-based attestation signing
+      attestations: write # for creating build/SBOM attestations
 
     uses: open-crypto-broker/.github/.github/workflows/build-release.yaml@main # nolint # zizmor: ignore[unpinned-uses]
     with:
