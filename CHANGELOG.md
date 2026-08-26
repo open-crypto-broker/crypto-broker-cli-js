@@ -3,6 +3,20 @@
 The list of commits in this changelog is automatically generated in the release process.
 The commits follow the Conventional Commit specification.
 
+## [0.5.0] - 2026-08-26
+
+### 🚀 Features
+
+- SLSA level 3 adjustments (#77)
+- Encrypt decrypt data (#76)
+
+### ⚙️ Miscellaneous Tasks
+
+- Bump version to v0.5.0
+- Bump version to v0.5.0-rc.0
+- Updated CB version (#78)
+- Remove OCM variable (#74)
+
 ## [0.4.2] - 2026-08-05
 
 ### 🐛 Bug Fixes
