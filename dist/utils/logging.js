@@ -41,11 +41,4 @@ export class DurationLogs {
         this.add(label, durationMicroS);
     }
 }
-/*export function logDuration(label: string, start: bigint, end: bigint) {
-  const durationMicroS = (end - start) / BigInt(1000.0);
-  logger.info(`${label} took ${durationMicroS} µs`);
-  if (typeof durationLogs === 'object') {
-    durationLogs.add(label, durationMicroS);
-  }
-}*/
 //# sourceMappingURL=logging.js.map
