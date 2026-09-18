@@ -13,6 +13,7 @@
     "build": "tsc --declaration",
     "esbuild": "esbuild dist/cli.js --bundle --platform=node --outfile=bin/$APP_NAME --format=cjs --define:__VERSION__=\\\"${npm_package_version}\\\" --define:__GIT_HASH__=\\\"${GIT_HASH}\\\"",
     "clean": "tsc --build --clean",
+    "test": "npm run build && node --test test/*.test.mjs",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "format": "eslint --fix && prettier --write 'src/**/*.{ts,tsx,js,json,md}'",
     "prepare": "husky || true"
@@ -36,6 +37,7 @@
   "license": "Apache-2.0",
   "description": "Client Javascript repository to interact with a deployed Crypto Broker Server",
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.4",
     "@open-crypto-broker/cryptobroker-client": "0.5.0",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-logs-otlp-grpc": "^0.219.0",
