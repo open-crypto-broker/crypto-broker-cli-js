@@ -172,6 +172,11 @@ tasks:
     cmds:
       - npm run lint
 
+  unit-test:
+    desc: "Run unit tests"
+    cmds:
+      - npm test
+
   vulnerability-check:
     desc: "Run vulnerability check"
     cmds:
@@ -183,4 +188,5 @@ tasks:
     - task: npm-ci
     - task: format
     - task: lint
+    - task: unit-test
     - task: vulnerability-check

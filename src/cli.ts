@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
+import { grpcTraceContextInterceptor } from './otel/grpcTraceContext.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import { randomUUID } from 'crypto';
@@ -239,6 +240,7 @@ async function main() {
     if (parsed_args.command === 'local-benchmark') {
       const cryptoLib = await CryptoBrokerClient.NewLibrary({
         circuitBreakerOptions: { enabled: false },
+        grpcOptions: { interceptors: [grpcTraceContextInterceptor] },
       });
 
       const bench = new Bench({
@@ -287,7 +289,9 @@ async function main() {
     }
 
     // create new client (NewLibrary waits for channel readiness)
-    const cryptoLib = await CryptoBrokerClient.NewLibrary();
+    const cryptoLib = await CryptoBrokerClient.NewLibrary({
+      grpcOptions: { interceptors: [grpcTraceContextInterceptor] },
+    });
 
     await execute(cryptoLib, parsed_args);
     while (parsed_args.delay) {
