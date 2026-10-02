@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import 'reflect-metadata';
 import { tracer, tracingProvider } from './otel/tracer.js';
-import { grpcTraceContextInterceptor } from './otel/grpcTraceContext.js';
 import { loggingProvider } from './otel/logger.js';
 import { context, SpanStatusCode, trace } from '@opentelemetry/api';
 import { randomUUID } from 'crypto';
@@ -15,6 +14,7 @@ import {
   VERSION as CLIENT_VERSION,
   HashDataPayload,
   SignCertificatePayload,
+  SignDataPayload,
 } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId } from './otel/attributes.js';
 
@@ -47,6 +47,7 @@ import {
   addBenchmarkParser,
   BenchmarkCommand,
 } from './commands/server_benchmark.js';
+import { addSigntDataParser, SignDataCommand } from './commands/sign_data.js';
 const durationLogs = new DurationLogs();
 
 function hasErrorCode(code: (string | number)[], err: unknown): err is Error {
@@ -90,6 +91,9 @@ function init_parser() {
   addEncryptDataParser(sub_parsers);
   addDecryptDataParser(sub_parsers);
 
+  // sign/verify data command
+  addSigntDataParser(sub_parsers);
+
   // local benchmark command
   addLocalBenchmarkParser(sub_parsers);
 
@@ -125,6 +129,10 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
       executor: async (payload: DecryptDataPayload) =>
         cryptoLib.decryptData(payload),
     },
+    'sign-data': {
+      operator: SignDataCommand,
+      executor: async (payload: SignDataPayload) => cryptoLib.signData(payload),
+    },
     benchmark: {
       operator: BenchmarkCommand,
       executor: async (payload: BenchmarkPayload) =>
@@ -136,8 +144,6 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
     },
   };
 
-  // Data hashing
-  // Usage: cli.js [--loop <delay>] hash-data [--profile <profile>] <data>
   if (command in commandMap) {
     const op = new commandMap[command].operator(parsed_args);
     const span = tracer.startSpan(`CLI.${op.methodName}`, {
@@ -240,7 +246,7 @@ async function main() {
     if (parsed_args.command === 'local-benchmark') {
       const cryptoLib = await CryptoBrokerClient.NewLibrary({
         circuitBreakerOptions: { enabled: false },
-        grpcOptions: { interceptors: [grpcTraceContextInterceptor] },
+        grpcOptions: { interceptors: [] },
       });
 
       const bench = new Bench({
@@ -290,7 +296,7 @@ async function main() {
 
     // create new client (NewLibrary waits for channel readiness)
     const cryptoLib = await CryptoBrokerClient.NewLibrary({
-      grpcOptions: { interceptors: [grpcTraceContextInterceptor] },
+      grpcOptions: { interceptors: [] },
     });
 
     await execute(cryptoLib, parsed_args);
