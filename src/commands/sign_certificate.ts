@@ -51,24 +51,22 @@ export function addSignCertificateParser(sub_parsers: SubparsersAction) {
 export class SignCertificateCommand implements Command {
   readonly methodName = 'SignCertificate';
   profile: string;
-  csr: string;
-  caCert: string;
-  caPrivateKey: string;
+  csr = '';
+  caCert = '';
+  caPrivateKey = '';
   encoding: string;
   subject: string | undefined;
 
-  constructor(parsed_args: Namespace) {
+  constructor(private readonly parsed_args: Namespace) {
     this.profile = parsed_args.profile;
     this.encoding = parsed_args.encoding;
     this.subject = parsed_args.subject;
-
-    // get file contents
-    this.csr = fs.readFileSync(parsed_args.csr, 'utf8');
-    this.caCert = fs.readFileSync(parsed_args.caCert, 'utf8');
-    this.caPrivateKey = fs.readFileSync(parsed_args.caKey, 'utf8');
   }
 
   getPayload(): SignCertificatePayload {
+    this.csr = fs.readFileSync(this.parsed_args.csr, 'utf8');
+    this.caCert = fs.readFileSync(this.parsed_args.caCert, 'utf8');
+    this.caPrivateKey = fs.readFileSync(this.parsed_args.caKey, 'utf8');
     return {
       profile: this.profile,
       csr: this.csr,

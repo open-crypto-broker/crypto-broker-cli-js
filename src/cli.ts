@@ -16,7 +16,11 @@ import {
   HashDataPayload,
   SignCertificatePayload,
 } from '@open-crypto-broker/cryptobroker-client';
-import { AttrCorrelationId } from './otel/attributes.js';
+import {
+  AttrCorrelationId,
+  AttrCryptoProfile,
+  AttrRpcMethod,
+} from './otel/attributes.js';
 
 import {
   ArgumentDefaultsHelpFormatter,
@@ -141,21 +145,28 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
   if (command in commandMap) {
     const op = new commandMap[command].operator(parsed_args);
     const span = tracer.startSpan(`CLI.${op.methodName}`, {
-      attributes: op.getRequestAttributes(),
+      attributes: {
+        [AttrRpcMethod]: op.methodName,
+        ...(op.profile !== undefined && { [AttrCryptoProfile]: op.profile }),
+      },
     });
 
-    logger.info(`Executing ${op.methodName} using '${op.profile}' profile...`);
     const start = process.hrtime.bigint();
     return context.with(trace.setSpan(context.active(), span), async () => {
       try {
+        logger.info(
+          `Executing ${op.methodName} using '${op.profile}' profile...`,
+        );
         // info if subject is provided in sign-certificate
         if (command === 'sign-certificate' && parsed_args.subject) {
           logger.info(`Note: The CSR subject will be overwritten by argument.`);
         }
 
         // request
+        const payload = op.getPayload();
+        span.setAttributes(op.getRequestAttributes());
         const response = await commandMap[command].executor({
-          ...op.getPayload(),
+          ...payload,
           metadata: {
             id: randomUUID(),
             traceContext: {
@@ -197,14 +208,16 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
 }
 
 async function main() {
+  // shortcut: wait for active RPCs until the client exposes cancellation.
+  const stop = new AbortController();
   // signal handling
-  process.on('SIGINT', () => {
+  process.once('SIGINT', () => {
     logger.info('Received SIGINT, exiting...');
-    process.exit(0);
+    stop.abort();
   });
-  process.on('SIGTERM', () => {
+  process.once('SIGTERM', () => {
     logger.info('Received SIGTERM, exiting...');
-    process.exit(0);
+    stop.abort();
   });
 
   // initializes the parsers
@@ -231,7 +244,7 @@ async function main() {
       },
     };
     console.log(JSON.stringify(versions, null, 2));
-    process.exit(0);
+    return;
   }
 
   try {
@@ -246,6 +259,7 @@ async function main() {
       const bench = new Bench({
         name: 'Local CLI-JS Benchmark',
         iterations: 100,
+        signal: stop.signal,
       });
 
       bench
@@ -285,7 +299,7 @@ async function main() {
           'Average gRPC response overhead:',
         ),
       );
-      process.exit(0);
+      return;
     }
 
     // create new client (NewLibrary waits for channel readiness)
@@ -293,10 +307,12 @@ async function main() {
       grpcOptions: { interceptors: [grpcTraceContextInterceptor] },
     });
 
+    if (stop.signal.aborted) return;
     await execute(cryptoLib, parsed_args);
-    while (parsed_args.delay) {
+    while (parsed_args.delay && !stop.signal.aborted) {
       try {
         await sleep(parsed_args.delay);
+        if (stop.signal.aborted) break;
         await execute(cryptoLib, parsed_args);
       } catch (err) {
         const expectedErrors = [
@@ -321,13 +337,13 @@ async function main() {
     }
   } catch (err) {
     logger.error((err as Error).message);
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    await tracingProvider.shutdown();
-    await loggingProvider.shutdown();
+    await Promise.all([tracingProvider.shutdown(), loggingProvider.shutdown()]);
   }
 }
 
 main().catch((err) => {
+  process.exitCode = 1;
   logger.error(`CLI Error: ${(err as Error).message}`);
 });

@@ -86,7 +86,7 @@ const loggingProvider = new LoggerProvider({
 logs.setGlobalLoggerProvider(loggingProvider);
 
 registerInstrumentations({
-  instrumentations: [new WinstonInstrumentation()],
+  instrumentations: [new WinstonInstrumentation({ disableLogSending: true })],
 });
 
 export { loggingProvider };
