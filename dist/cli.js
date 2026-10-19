@@ -14,6 +14,8 @@ import { addSignCertificateParser, SignCertificateCommand, } from './commands/si
 import { addEncryptDataParser, EncryptDataCommand, } from './commands/encrypt_data.js';
 import { addDecryptDataParser, DecryptDataCommand, } from './commands/decrypt_data.js';
 import { addLocalBenchmarkParser } from './commands/local_benchmark.js';
+import { addSignDataParser, SignDataCommand } from './commands/sign_data.js';
+import { addVerifyDataParser, VerifyDataCommand, } from './commands/verify_data.js';
 import { numToHexString } from './utils/conversions.js';
 import { logger, DurationLogs } from './utils/logging.js';
 import { addHealthDataParser, HealthDataCommand, } from './commands/health_data.js';
@@ -52,6 +54,9 @@ function init_parser() {
     // encrypt/decrypt data command
     addEncryptDataParser(sub_parsers);
     addDecryptDataParser(sub_parsers);
+    // sign/verify data command
+    addSignDataParser(sub_parsers);
+    addVerifyDataParser(sub_parsers);
     // local benchmark command
     addLocalBenchmarkParser(sub_parsers);
     // server-side benchmark command
@@ -78,6 +83,14 @@ async function execute(cryptoLib, parsed_args) {
         'decrypt-data': {
             operator: DecryptDataCommand,
             executor: async (payload) => cryptoLib.decryptData(payload),
+        },
+        'sign-data': {
+            operator: SignDataCommand,
+            executor: async (payload) => cryptoLib.signData(payload),
+        },
+        'verify-data': {
+            operator: VerifyDataCommand,
+            executor: async (payload) => cryptoLib.verifyData(payload),
         },
         benchmark: {
             operator: BenchmarkCommand,

@@ -15,6 +15,8 @@ import {
   VERSION as CLIENT_VERSION,
   HashDataPayload,
   SignCertificatePayload,
+  SignDataPayload,
+  VerifyDataPayload,
 } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId } from './otel/attributes.js';
 
@@ -37,6 +39,11 @@ import {
   DecryptDataCommand,
 } from './commands/decrypt_data.js';
 import { addLocalBenchmarkParser } from './commands/local_benchmark.js';
+import { addSignDataParser, SignDataCommand } from './commands/sign_data.js';
+import {
+  addVerifyDataParser,
+  VerifyDataCommand,
+} from './commands/verify_data.js';
 import { numToHexString } from './utils/conversions.js';
 import { logger, DurationLogs } from './utils/logging.js';
 import {
@@ -90,6 +97,10 @@ function init_parser() {
   addEncryptDataParser(sub_parsers);
   addDecryptDataParser(sub_parsers);
 
+  // sign/verify data command
+  addSignDataParser(sub_parsers);
+  addVerifyDataParser(sub_parsers);
+
   // local benchmark command
   addLocalBenchmarkParser(sub_parsers);
 
@@ -124,6 +135,15 @@ async function execute(cryptoLib: CryptoBrokerClient, parsed_args) {
       operator: DecryptDataCommand,
       executor: async (payload: DecryptDataPayload) =>
         cryptoLib.decryptData(payload),
+    },
+    'sign-data': {
+      operator: SignDataCommand,
+      executor: async (payload: SignDataPayload) => cryptoLib.signData(payload),
+    },
+    'verify-data': {
+      operator: VerifyDataCommand,
+      executor: async (payload: VerifyDataPayload) =>
+        cryptoLib.verifyData(payload),
     },
     benchmark: {
       operator: BenchmarkCommand,

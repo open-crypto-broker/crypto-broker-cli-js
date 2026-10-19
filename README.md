@@ -89,6 +89,71 @@ The CLI can then be used via the "cryptobroker-cli" command.
 
 Note: The [server application](https://github.com/open-crypto-broker/crypto-broker-server/) must be running locally.
 
+## Sign and verify data
+
+`sign-data` and `verify-data` use the algorithms and key constraints in the
+selected server profile. Both commands accept UTF-8 text and exactly one key
+source:
+
+- `--key <path>`: a PEM or DER private key for signing, or public key for verification.
+- `--keyRaw <hex>`: the same key bytes encoded as hexadecimal.
+- `--keyId <id>`: a KMS identifier, if supported by the server. The current native
+  signing implementation supports raw keys only.
+
+These commands send a single key. Hybrid component keys are not supported by the
+current native server implementation.
+
+Use `--key` for private keys to keep the key bytes out of shell history and process
+arguments. Protect private key files with owner-only permissions.
+
+`--profile` defaults to `Default`. Omit `--signature-format` to use the profile's
+format, or select `SIGNATURE_RAW`, `SIGNATURE_DER`, or `SIGNATURE_PEM`. Values are
+case-insensitive. `SIGNATURE_CMS` is part of the client API but is not currently
+supported by the server. The format controls signature bytes; it does not select
+the signing algorithm or JSON encoding.
+
+### Local example
+
+Build the CLI with `npm ci && npm run build`. Start a server with SignData/VerifyData
+support and the example `Default` profile (ECDSA, SHA-512, a 384–521-bit key).
+Create a test key pair:
+
+```bash
+umask 077
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:secp384r1 -out private.pem
+openssl pkey -in private.pem -pubout -out public.pem
+```
+
+Sign text and save the JSON response. Disable trace export here so stdout contains
+only JSON lines:
+
+```bash
+OTEL_TRACES_EXPORTER=none OTEL_LOGS_EXPORTER=none \
+  node dist/cli.js sign-data --key private.pem 'Hello Crypto Broker' > signed.jsonl
+```
+
+The response keeps the client library's JSON representation of `Buffer` or
+`Uint8Array` signature bytes. Convert those bytes to hexadecimal for `verify-data`:
+
+```bash
+SIGNATURE_HEX=$(node --input-type=module -e '
+  import { readFileSync } from "node:fs";
+  const rows = readFileSync("signed.jsonl", "utf8").trim().split("\n").map(JSON.parse);
+  const response = rows.find(row => row.signature);
+  if (!response) throw new Error("No signature response; check signed.jsonl");
+  const bytes = response.signature.data ?? Object.values(response.signature);
+  console.log(Buffer.from(bytes).toString("hex"));
+')
+OTEL_TRACES_EXPORTER=none OTEL_LOGS_EXPORTER=none \
+  node dist/cli.js verify-data --key public.pem 'Hello Crypto Broker' "$SIGNATURE_HEX"
+```
+
+A valid signature returns `"valid":true`. Change the text to test `"valid":false`.
+Both are successful RPC responses with exit code 0; callers must check `valid`.
+Malformed arguments are rejected, and RPC errors return a nonzero exit code.
+For a format override, pass the same `--signature-format` to both commands.
+The global `--loop <delay>` option works with both commands.
+
 ## Support, Feedback, Contributing
 
 This project is open to feature requests/suggestions, bug reports etc. via [GitHub issues](https://github.com/open-crypto-broker/crypto-broker-client-js/issues). Contribution and feedback are encouraged and always welcome. For more information about how to contribute, the project structure, as well as additional contribution information, see our [Contribution Guidelines](CONTRIBUTING.md).
