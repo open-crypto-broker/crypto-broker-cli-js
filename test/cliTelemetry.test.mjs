@@ -118,6 +118,7 @@ test(
         signalAfter = 1,
         traces = 'otlphttp',
         logs = 'otlphttp',
+        useDefaults = false,
       } = {},
     ) {
       received.length = 0;
@@ -136,8 +137,10 @@ test(
         cwd: dir,
         env: {
           ...env,
-          OTEL_TRACES_EXPORTER: traces,
-          OTEL_LOGS_EXPORTER: logs,
+          ...(!useDefaults && {
+            OTEL_TRACES_EXPORTER: traces,
+            OTEL_LOGS_EXPORTER: logs,
+          }),
           OTEL_TRACES_SAMPLER: 'always_on',
           OTEL_SERVICE_NAME: 'cli-telemetry-test',
           OTEL_EXPORTER_OTLP_ENDPOINT: endpoint,
@@ -277,6 +280,57 @@ test(
     const files = ['csr', 'caCert', 'caKey'];
     for (const file of files)
       await writeFile(join(dir, file), 'public test input');
+    for (const [name, entry] of [
+      ['bundled', bundled],
+      ['unbundled', unbundled],
+    ]) {
+      for (const [method, args, expected] of [
+        [
+          'HashData',
+          ['hash-data', '--output-format=hex', 'test'],
+          { hashValueHex: 'test-hash' },
+        ],
+        [
+          'SignCertificate',
+          [
+            'sign-certificate',
+            '--encoding=pem',
+            ...files.flatMap((file) => [`--${file}`, join(dir, file)]),
+          ],
+          { pem: 'test-certificate' },
+        ],
+      ]) {
+        await t.test(
+          `${name}: default console exporters preserve ${method} JSON output`,
+          async () => {
+            const result = await run(args, { entry, useDefaults: true });
+            assert.equal(result.code, 0, result.stderr);
+            // Each top-level object can contain pretty-printed JSON.
+            const output = result.stdout
+              .trim()
+              .split(/\n(?=\{)/)
+              .map(JSON.parse);
+            const [key, value] = Object.entries(expected)[0];
+            assert.equal(
+              output.filter((item) => item[key] === value).length,
+              1,
+            );
+            const spans = output.filter(
+              (item) => item.name === `CLI.${method}`,
+            );
+            assert.equal(spans.length, 1);
+            const records = output.filter(
+              (item) => typeof item.body === 'string',
+            );
+            assert.equal(records.length, 2);
+            for (const record of records) {
+              assert.equal(record.traceId, spans[0].traceId);
+              assert.equal(record.spanId, spans[0].id);
+            }
+          },
+        );
+      }
+    }
     for (const missing of files) {
       await t.test(
         `missing ${missing}: export certificate input error`,

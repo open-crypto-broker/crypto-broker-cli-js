@@ -2,12 +2,13 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 import { resourceFromAttributes, detectResources, processDetector, } from '@opentelemetry/resources';
 import { logs } from '@opentelemetry/api-logs';
-import { LoggerProvider, BatchLogRecordProcessor, ConsoleLogRecordExporter, } from '@opentelemetry/sdk-logs';
+import { LoggerProvider, BatchLogRecordProcessor, } from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter as GrpcExporter } from '@opentelemetry/exporter-logs-otlp-grpc';
 import { OTLPLogExporter as HttpExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { OTLPLogExporter as ProtoExporter } from '@opentelemetry/exporter-logs-otlp-proto';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION, ATTR_SERVICE_NAMESPACE, } from '@opentelemetry/semantic-conventions';
 import { configuration } from './parameters.js';
+import { JsonConsoleLogRecordExporter } from './JsonConsoleLogRecordExporter.js';
 const buildExporter = (name) => {
     const collectorOptions = {
         url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
@@ -21,7 +22,7 @@ const buildExporter = (name) => {
             return undefined;
         case 'console':
             console.error('Registered console log exporter.');
-            return new ConsoleLogRecordExporter();
+            return new JsonConsoleLogRecordExporter();
         case 'otlpgrpc':
             console.error('Registered grpc log exporter.');
             return new GrpcExporter(collectorOptions);
