@@ -1,4 +1,4 @@
-import { enumKeysToStringArray } from '../utils/conversions.js';
+import { enumKeysToStringArray, PEMToBytes } from '../utils/conversions.js';
 import { SignCertificateOutputFormat, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCryptoCaCertSize, AttrCryptoCsrSize, AttrCryptoProfile, AttrCryptoSignCertificateSize, AttrRpcMethod, } from '../otel/attributes.js';
 import fs from 'fs';
@@ -48,12 +48,7 @@ export class SignCertificateCommand {
         // get file contents
         this.csr = fs.readFileSync(parsed_args.csr, 'utf8');
         this.caCert = fs.readFileSync(parsed_args.caCert, 'utf8');
-        const caPrivateKeyPEM = fs.readFileSync(parsed_args.caKey, 'utf8');
-        // get bytes from encoded key
-        this.caPrivateKey = Buffer.from(caPrivateKeyPEM
-            .replace(/-----BEGIN [^-]+-----|-----END [^-]+-----|\s/g, '')
-            .trim(), 'base64');
-        console.error(this.caPrivateKey);
+        this.caPrivateKey = PEMToBytes(fs.readFileSync(parsed_args.caKey, 'utf8'));
     }
     getPayload() {
         return {
