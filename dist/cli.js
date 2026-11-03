@@ -8,16 +8,17 @@ import { Bench } from 'tinybench';
 import { CryptoBrokerClient, GIT_HASH as CLIENT_HASH, VERSION as CLIENT_VERSION, } from '@open-crypto-broker/cryptobroker-client';
 import { AttrCorrelationId } from './otel/attributes.js';
 import { ArgumentDefaultsHelpFormatter, ArgumentParser, ArgumentTypeError, } from 'argparse';
-import { addHashDataParser, HashDataCommand } from './commands/hash_data.js';
-import { addSignCertificateParser, SignCertificateCommand, } from './commands/sign_certificate.js';
-import { addEncryptDataParser, EncryptDataCommand, } from './commands/encrypt_data.js';
-import { addDecryptDataParser, DecryptDataCommand, } from './commands/decrypt_data.js';
+import { addHashDataParser, HashDataCommand } from './commands/hash-data.js';
+import { addSignCertificateParser, SignCertificateCommand, } from './commands/sign-certificate.js';
+import { addEncryptDataParser, EncryptDataCommand, } from './commands/encrypt-data.js';
+import { addDecryptDataParser, DecryptDataCommand, } from './commands/decrypt-data.js';
 import { addLocalBenchmarkParser } from './commands/local_benchmark.js';
 import { numToHexString } from './utils/conversions.js';
 import { logger, DurationLogs } from './utils/logging.js';
-import { addHealthDataParser, HealthDataCommand, } from './commands/health_data.js';
+import { addHealthDataParser, HealthDataCommand, } from './commands/health.js';
 import { addBenchmarkParser, BenchmarkCommand, } from './commands/server_benchmark.js';
-import { addSigntDataParser, SignDataCommand } from './commands/sign_data.js';
+import { addSignDataParser, SignDataCommand } from './commands/sign-data.js';
+import { addVerifyDataParser, VerifyDataCommand, } from './commands/verify-data.js';
 const durationLogs = new DurationLogs();
 function hasErrorCode(code, err) {
     return typeof err === 'object' && err !== null && code.includes(err['code']);
@@ -53,7 +54,8 @@ function init_parser() {
     addEncryptDataParser(sub_parsers);
     addDecryptDataParser(sub_parsers);
     // sign/verify data command
-    addSigntDataParser(sub_parsers);
+    addSignDataParser(sub_parsers);
+    addVerifyDataParser(sub_parsers);
     // local benchmark command
     addLocalBenchmarkParser(sub_parsers);
     // server-side benchmark command
@@ -85,6 +87,10 @@ async function execute(cryptoLib, parsed_args) {
             operator: SignDataCommand,
             executor: async (payload) => cryptoLib.signData(payload),
         },
+        'verify-data': {
+            operator: VerifyDataCommand,
+            executor: async (payload) => cryptoLib.verifyData(payload),
+        },
         benchmark: {
             operator: BenchmarkCommand,
             executor: async (payload) => cryptoLib.benchmarkData(payload),
@@ -108,6 +114,7 @@ async function execute(cryptoLib, parsed_args) {
                     logger.info(`Note: The CSR subject will be overwritten by argument.`);
                 }
                 // request
+                console.error(op.getPayload()); // FIXME
                 const response = await commandMap[command].executor({
                     ...op.getPayload(),
                     metadata: {

@@ -54,7 +54,7 @@ export class SignDataCommand {
                 },
             },
             input: Buffer.from(this.input),
-            signatureFormat: SignatureFormat[this.format] ?? SignatureFormat.SIGNATURE_RAW,
+            signatureFormat: SignatureFormat[this.format] ?? SignatureFormat.SIGNATURE_FORMAT_RAW,
         };
     }
     getRequestAttributes() {

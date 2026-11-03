@@ -7,7 +7,7 @@ import {
 } from '@open-crypto-broker/cryptobroker-client';
 import { enumKeysToStringArray } from '../utils/conversions.js';
 
-export function addSigntDataParser(sub_parsers: SubparsersAction) {
+export function addSignDataParser(sub_parsers: SubparsersAction) {
   const signData_parser = sub_parsers.add_parser('sign-data', {
     help: 'Signs data',
   });
@@ -25,9 +25,9 @@ export function addSigntDataParser(sub_parsers: SubparsersAction) {
     type: (arg: string) => Buffer.from(arg, 'hex'),
     help: 'Specifies the raw key bytes to be used for signing (hex-based)',
   });
-  signData_parser.add_argument('--output-format', {
-    default: 'HEX',
-    choices: enumKeysToStringArray(SignatureFormat),
+  signData_parser.add_argument('--signature-format', {
+    default: 'RAW',
+    choices: enumKeysToStringArray(SignatureFormat, 'SIGNATURE_FORMAT_'),
     type: (str: string) => str.toUpperCase(),
     help: 'Specifies which format should be used for the signing operation',
   });
@@ -51,6 +51,7 @@ export class SignDataCommand implements Command {
     this.keyRaw = parsed_args.keyRaw;
     this.input = parsed_args.input;
     this.format = parsed_args.signature_format;
+    console.error(enumKeysToStringArray(SignatureFormat));
   }
 
   getPayload(): SignDataPayload {
@@ -64,7 +65,7 @@ export class SignDataCommand implements Command {
       },
       input: Buffer.from(this.input),
       signatureFormat:
-        SignatureFormat[this.format] ?? SignatureFormat.SIGNATURE_RAW,
+        SignatureFormat[this.format] ?? SignatureFormat.SIGNATURE_FORMAT_RAW,
     };
   }
 

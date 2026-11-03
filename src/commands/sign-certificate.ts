@@ -1,5 +1,5 @@
 import { Namespace, SubparsersAction } from 'argparse';
-import { enumKeysToStringArray } from '../utils/conversions.js';
+import { enumKeysToStringArray, PEMToBytes } from '../utils/conversions.js';
 import {
   SignCertificateOutputFormat,
   SignCertificatePayload,
@@ -7,7 +7,6 @@ import {
 } from '@open-crypto-broker/cryptobroker-client';
 import {
   AttrCryptoCaCertSize,
-  AttrCryptoCaKeySize,
   AttrCryptoCsrSize,
   AttrCryptoProfile,
   AttrCryptoSignCertificateSize,
@@ -26,7 +25,10 @@ export function addSignCertificateParser(sub_parsers: SubparsersAction) {
   });
   signCertificate_parser.add_argument('--encoding', {
     default: 'PEM',
-    choices: enumKeysToStringArray(SignCertificateOutputFormat),
+    choices: enumKeysToStringArray(
+      SignCertificateOutputFormat,
+      'SIGN_OUTPUT_FORMAT_',
+    ),
     type: (str: string) => str.toUpperCase(),
     help: 'Specifies which encoding should be used for the signing operation',
   });
@@ -53,7 +55,7 @@ export class SignCertificateCommand implements Command {
   profile: string;
   csr: string;
   caCert: string;
-  caPrivateKey: string;
+  caPrivateKey: Uint8Array;
   encoding: string;
   subject: string | undefined;
 
@@ -65,15 +67,19 @@ export class SignCertificateCommand implements Command {
     // get file contents
     this.csr = fs.readFileSync(parsed_args.csr, 'utf8');
     this.caCert = fs.readFileSync(parsed_args.caCert, 'utf8');
-    this.caPrivateKey = fs.readFileSync(parsed_args.caKey, 'utf8');
+    this.caPrivateKey = PEMToBytes(fs.readFileSync(parsed_args.caKey, 'utf8'));
   }
 
   getPayload(): SignCertificatePayload {
     return {
       profile: this.profile,
       csr: this.csr,
-      caPrivateKey: this.caPrivateKey,
       caCert: this.caCert,
+      keySource: {
+        single: {
+          rawKey: this.caPrivateKey,
+        },
+      },
       ...(this.subject !== undefined && { subject: this.subject }),
       crlDistributionPoints: [
         'http://example.com/crls/list1.crl',
@@ -81,7 +87,7 @@ export class SignCertificateCommand implements Command {
       ],
       outputFormat:
         SignCertificateOutputFormat[this.encoding] ??
-        SignCertificateOutputFormat.PEM,
+        SignCertificateOutputFormat.SIGN_OUTPUT_FORMAT_PEM,
     };
   }
 
@@ -91,7 +97,6 @@ export class SignCertificateCommand implements Command {
       [AttrCryptoProfile]: this.profile,
       [AttrCryptoCsrSize]: this.csr.length,
       [AttrCryptoCaCertSize]: this.caCert.length,
-      [AttrCryptoCaKeySize]: this.caPrivateKey.length,
     };
   }
   getResponseAttributes(response: SignCertificateResponse) {
