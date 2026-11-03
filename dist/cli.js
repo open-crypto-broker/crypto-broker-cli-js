@@ -15,7 +15,7 @@ import { addDecryptDataParser, DecryptDataCommand, } from './commands/decrypt-da
 import { addLocalBenchmarkParser } from './commands/local_benchmark.js';
 import { numToHexString } from './utils/conversions.js';
 import { logger, DurationLogs } from './utils/logging.js';
-import { addHealthDataParser, HealthDataCommand, } from './commands/health.js';
+import { addHealthDataParser, HealthDataCommand } from './commands/health.js';
 import { addBenchmarkParser, BenchmarkCommand, } from './commands/server_benchmark.js';
 import { addSignDataParser, SignDataCommand } from './commands/sign-data.js';
 import { addVerifyDataParser, VerifyDataCommand, } from './commands/verify-data.js';
@@ -114,7 +114,6 @@ async function execute(cryptoLib, parsed_args) {
                     logger.info(`Note: The CSR subject will be overwritten by argument.`);
                 }
                 // request
-                console.error(op.getPayload()); // FIXME
                 const response = await commandMap[command].executor({
                     ...op.getPayload(),
                     metadata: {
