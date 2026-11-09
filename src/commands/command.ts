@@ -4,5 +4,5 @@ export interface Command {
 
   getPayload();
   getRequestAttributes(): Record<string, string | number>;
-  getResponseAttributes(response): Record<string, string | number>;
+  getResponseAttributes(response): Record<string, string | number | undefined>;
 }
