@@ -1,7 +1,9 @@
 import { createLogger, transports } from 'winston';
+import { OpenTelemetryTransportV3 } from '@opentelemetry/winston-transport';
 
 export const logger = createLogger({
-  transports: [new transports.Console()],
+  // Bundles bypass the module hook that adds the telemetry transport.
+  transports: [new transports.Console(), new OpenTelemetryTransportV3()],
 });
 
 // For benchmarking

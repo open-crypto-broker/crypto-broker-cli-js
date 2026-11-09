@@ -4,6 +4,7 @@ import { AttrCryptoCaCertSize, AttrCryptoCaKeySize, AttrCryptoCsrSize, AttrCrypt
 import { Command } from './command.js';
 export declare function addSignCertificateParser(sub_parsers: SubparsersAction): import("argparse").ArgumentParser;
 export declare class SignCertificateCommand implements Command {
+    private readonly parsed_args;
     readonly methodName = "SignCertificate";
     profile: string;
     csr: string;
