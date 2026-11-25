@@ -56,13 +56,14 @@ export class SignCertificateCommand {
             csr: this.csr,
             caPrivateKey: this.caPrivateKey,
             caCert: this.caCert,
+            keySource: {},
             ...(this.subject !== undefined && { subject: this.subject }),
             crlDistributionPoints: [
                 'http://example.com/crls/list1.crl',
                 'http://example.com/crls/list2.crl',
             ],
             outputFormat: SignCertificateOutputFormat[this.encoding] ??
-                SignCertificateOutputFormat.PEM,
+                SignCertificateOutputFormat.SIGN_OUTPUT_FORMAT_PEM,
         };
     }
     getRequestAttributes() {

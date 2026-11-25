@@ -32,7 +32,8 @@ export class HashDataCommand {
         return {
             profile: this.profile,
             input: Buffer.from(this.data),
-            outputFormat: HashDataOutputFormat[this.format] ?? HashDataOutputFormat.HEX,
+            outputFormat: HashDataOutputFormat[this.format] ??
+                HashDataOutputFormat.HASH_OUTPUT_FORMAT_HEX,
         };
     }
     getRequestAttributes() {
@@ -44,7 +45,7 @@ export class HashDataCommand {
     }
     getResponseAttributes(response) {
         return {
-            [AttrCryptoHashAlgorithm]: response.hashAlgorithm,
+            [AttrCryptoHashAlgorithm]: response.descriptor?.algorithm,
             [AttrCryptoHashOutputSize]: response.hashValueHex?.length ?? response.hashValueRaw?.length ?? 0,
         };
     }

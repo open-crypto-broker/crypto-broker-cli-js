@@ -7,7 +7,6 @@ import {
 } from '@open-crypto-broker/cryptobroker-client';
 import {
   AttrCryptoCaCertSize,
-  AttrCryptoCaKeySize,
   AttrCryptoCsrSize,
   AttrCryptoProfile,
   AttrCryptoSignCertificateSize,
@@ -26,7 +25,10 @@ export function addSignCertificateParser(sub_parsers: SubparsersAction) {
   });
   signCertificate_parser.add_argument('--encoding', {
     default: 'PEM',
-    choices: enumKeysToStringArray(SignCertificateOutputFormat),
+    choices: enumKeysToStringArray(
+      SignCertificateOutputFormat,
+      'SIGN_OUTPUT_FORMAT_',
+    ),
     type: (str: string) => str.toUpperCase(),
     help: 'Specifies which encoding should be used for the signing operation',
   });
@@ -41,9 +43,15 @@ export function addSignCertificateParser(sub_parsers: SubparsersAction) {
     help: 'Path to CA certificate file',
     required: true,
   });
-  signCertificate_parser.add_argument('--caKey', {
-    help: 'Path to CA private key file',
-    required: true,
+  const signCertificate_key_group =
+    signCertificate_parser.add_mutually_exclusive_group({
+      required: true,
+    });
+  signCertificate_key_group.add_argument('--keyId', {
+    help: 'Specifies which CA key from the KMS is used',
+  });
+  signCertificate_key_group.add_argument('--keyFile', {
+    help: 'Specifies the file path to the PEM-encoded CA key',
   });
   return signCertificate_parser;
 }
@@ -53,27 +61,34 @@ export class SignCertificateCommand implements Command {
   profile: string;
   csr: string;
   caCert: string;
-  caPrivateKey: string;
   encoding: string;
+  keyId: string | undefined;
+  keyRaw: Uint8Array | undefined;
   subject: string | undefined;
 
   constructor(parsed_args: Namespace) {
     this.profile = parsed_args.profile;
+    this.keyId = parsed_args.keyId;
     this.encoding = parsed_args.encoding;
     this.subject = parsed_args.subject;
 
     // get file contents
     this.csr = fs.readFileSync(parsed_args.csr, 'utf8');
     this.caCert = fs.readFileSync(parsed_args.caCert, 'utf8');
-    this.caPrivateKey = fs.readFileSync(parsed_args.caKey, 'utf8');
+    this.keyRaw = fs.readFileSync(parsed_args.keyFile);
   }
 
   getPayload(): SignCertificatePayload {
     return {
       profile: this.profile,
       csr: this.csr,
-      caPrivateKey: this.caPrivateKey,
       caCert: this.caCert,
+      keySource: {
+        single: {
+          ...(this.keyId !== undefined && { keyId: this.keyId }),
+          ...(this.keyRaw !== undefined && { rawKey: this.keyRaw }),
+        },
+      },
       ...(this.subject !== undefined && { subject: this.subject }),
       crlDistributionPoints: [
         'http://example.com/crls/list1.crl',
@@ -81,7 +96,7 @@ export class SignCertificateCommand implements Command {
       ],
       outputFormat:
         SignCertificateOutputFormat[this.encoding] ??
-        SignCertificateOutputFormat.PEM,
+        SignCertificateOutputFormat.SIGN_OUTPUT_FORMAT_PEM,
     };
   }
 
@@ -91,7 +106,6 @@ export class SignCertificateCommand implements Command {
       [AttrCryptoProfile]: this.profile,
       [AttrCryptoCsrSize]: this.csr.length,
       [AttrCryptoCaCertSize]: this.caCert.length,
-      [AttrCryptoCaKeySize]: this.caPrivateKey.length,
     };
   }
   getResponseAttributes(response: SignCertificateResponse) {

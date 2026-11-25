@@ -24,7 +24,7 @@ export function addHashDataParser(sub_parsers: SubparsersAction) {
   });
   hashData_parser.add_argument('--output-format', {
     default: 'HEX',
-    choices: enumKeysToStringArray(HashDataOutputFormat),
+    choices: enumKeysToStringArray(HashDataOutputFormat, 'HASH_OUTPUT_FORMAT_'),
     type: (str: string) => str.toUpperCase(),
     help: 'Specifies which encoding should be used for the hashing operation',
   });
@@ -49,7 +49,8 @@ export class HashDataCommand implements Command {
       profile: this.profile,
       input: Buffer.from(this.data),
       outputFormat:
-        HashDataOutputFormat[this.format] ?? HashDataOutputFormat.HEX,
+        HashDataOutputFormat[this.format] ??
+        HashDataOutputFormat.HASH_OUTPUT_FORMAT_HEX,
     };
   }
 
@@ -62,7 +63,7 @@ export class HashDataCommand implements Command {
   }
   getResponseAttributes(response: HashDataResponse) {
     return {
-      [AttrCryptoHashAlgorithm]: response.hashAlgorithm,
+      [AttrCryptoHashAlgorithm]: response.descriptor?.algorithm,
       [AttrCryptoHashOutputSize]:
         response.hashValueHex?.length ?? response.hashValueRaw?.length ?? 0,
     };

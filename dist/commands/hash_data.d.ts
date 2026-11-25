@@ -16,7 +16,7 @@ export declare class HashDataCommand implements Command {
         [AttrCryptoInputSize]: number;
     };
     getResponseAttributes(response: HashDataResponse): {
-        [AttrCryptoHashAlgorithm]: string;
+        [AttrCryptoHashAlgorithm]: string | undefined;
         [AttrCryptoHashOutputSize]: number;
     };
 }
