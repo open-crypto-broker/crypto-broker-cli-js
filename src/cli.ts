@@ -278,7 +278,7 @@ async function main() {
             profile: 'Default',
             csr: parsed_args.signCertificate_csr,
             caCert: parsed_args.signCertificate_caCert,
-            caKey: parsed_args.signCertificate_caKey,
+            keyFile: parsed_args.signCertificate_keyFile,
             encoding: 'PEM',
           };
           await execute(cryptoLib, args);

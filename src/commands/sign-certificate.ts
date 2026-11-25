@@ -1,5 +1,5 @@
 import { Namespace, SubparsersAction } from 'argparse';
-import { enumKeysToStringArray, PEMToBytes } from '../utils/conversions.js';
+import { enumKeysToStringArray } from '../utils/conversions.js';
 import {
   SignCertificateOutputFormat,
   SignCertificatePayload,
@@ -43,9 +43,15 @@ export function addSignCertificateParser(sub_parsers: SubparsersAction) {
     help: 'Path to CA certificate file',
     required: true,
   });
-  signCertificate_parser.add_argument('--caKey', {
-    help: 'Path to CA private key file',
-    required: true,
+  const signCertificate_key_group =
+    signCertificate_parser.add_mutually_exclusive_group({
+      required: true,
+    });
+  signCertificate_key_group.add_argument('--keyId', {
+    help: 'Specifies which CA key from the KMS is used',
+  });
+  signCertificate_key_group.add_argument('--keyFile', {
+    help: 'Specifies the file path to the PEM-encoded CA key',
   });
   return signCertificate_parser;
 }
@@ -55,19 +61,21 @@ export class SignCertificateCommand implements Command {
   profile: string;
   csr: string;
   caCert: string;
-  caPrivateKey: Uint8Array;
   encoding: string;
+  keyId: string | undefined;
+  keyRaw: Uint8Array | undefined;
   subject: string | undefined;
 
   constructor(parsed_args: Namespace) {
     this.profile = parsed_args.profile;
+    this.keyId = parsed_args.keyId;
     this.encoding = parsed_args.encoding;
     this.subject = parsed_args.subject;
 
     // get file contents
     this.csr = fs.readFileSync(parsed_args.csr, 'utf8');
     this.caCert = fs.readFileSync(parsed_args.caCert, 'utf8');
-    this.caPrivateKey = PEMToBytes(fs.readFileSync(parsed_args.caKey, 'utf8'));
+    this.keyRaw = fs.readFileSync(parsed_args.keyFile);
   }
 
   getPayload(): SignCertificatePayload {
@@ -77,7 +85,8 @@ export class SignCertificateCommand implements Command {
       caCert: this.caCert,
       keySource: {
         single: {
-          rawKey: this.caPrivateKey,
+          ...(this.keyId !== undefined && { keyId: this.keyId }),
+          ...(this.keyRaw !== undefined && { rawKey: this.keyRaw }),
         },
       },
       ...(this.subject !== undefined && { subject: this.subject }),

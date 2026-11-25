@@ -16,7 +16,7 @@ export function addLocalBenchmarkParser(sub_parsers: SubparsersAction) {
     help: 'Path to CA certificate file',
     required: true,
   });
-  localBenchmark_parser.add_argument('--signCertificate-caKey', {
+  localBenchmark_parser.add_argument('--signCertificate-keyFile', {
     help: 'Path to CA private key file',
     required: true,
   });

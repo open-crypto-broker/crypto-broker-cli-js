@@ -1,6 +1,7 @@
 import { AttrCryptoProfile, AttrRpcMethod } from '../otel/attributes.js';
 import { SignatureFormat, } from '@open-crypto-broker/cryptobroker-client';
 import { enumKeysToStringArray } from '../utils/conversions.js';
+import fs from 'fs';
 export function addSignDataParser(sub_parsers) {
     const signData_parser = sub_parsers.add_parser('sign-data', {
         help: 'Signs data',
@@ -15,9 +16,8 @@ export function addSignDataParser(sub_parsers) {
     signData_key_group.add_argument('--keyId', {
         help: 'Specifies which key from the KMS is used for signing',
     });
-    signData_key_group.add_argument('--keyRaw', {
-        type: (arg) => Buffer.from(arg, 'hex'),
-        help: 'Specifies the raw key bytes to be used for signing (hex-based)',
+    signData_key_group.add_argument('--keyFile', {
+        help: 'Specifies the file path to the PEM-encoded key to be used for signing',
     });
     signData_parser.add_argument('--signature-format', {
         default: 'RAW',
@@ -40,10 +40,10 @@ export class SignDataCommand {
     constructor(parsed_args) {
         this.profile = parsed_args.profile;
         this.keyId = parsed_args.keyId;
-        this.keyRaw = parsed_args.keyRaw;
         this.input = parsed_args.input;
         this.format = parsed_args.signature_format;
-        console.error(enumKeysToStringArray(SignatureFormat));
+        // get file contents
+        this.keyRaw = fs.readFileSync(parsed_args.keyFile);
     }
     getPayload() {
         return {

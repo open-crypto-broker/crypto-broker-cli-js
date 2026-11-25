@@ -8,8 +8,9 @@ export declare class SignCertificateCommand implements Command {
     profile: string;
     csr: string;
     caCert: string;
-    caPrivateKey: Uint8Array;
     encoding: string;
+    keyId: string | undefined;
+    keyRaw: Uint8Array | undefined;
     subject: string | undefined;
     constructor(parsed_args: Namespace);
     getPayload(): SignCertificatePayload;

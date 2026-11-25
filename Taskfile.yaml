@@ -116,7 +116,15 @@ tasks:
     vars:
       APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
     cmds:
-      - ./bin/{{.APP_NAME}} sign-data --profile=Default --keyRaw=67e1befda6538f162a308bb37b922441bed6e27039a26a48ad8e11c568c4cda0 "Welcome CryptoBroker" | jq -r '. | select(.plaintext) // select(.level=="error") // empty'
+      - ./bin/{{.APP_NAME}} sign-data --profile=Default --keyFile=$SIGN_VERIFY_ARTIFACTS/ec-secp384r1-priv.pem "Welcome CryptoBroker" | jq -r '. | select(.signature) // select(.level=="error") // empty'
+
+  test-verify-data:
+    deps: [build]
+    desc: "Test sign data command with Default profile"
+    vars:
+      APP_NAME: '{{.APP_NAME | default "js-client-cli"}}'
+    cmds:
+      - ./bin/{{.APP_NAME}} verify-data --profile=Default --keyFile=$SIGN_VERIFY_ARTIFACTS/ec-secp384r1-pub.pem "Welcome CryptoBroker" b251582aace89282e8ae6bc38de69fd715a9c5df9840c1017cf91ec14a5a473ec99b9778904c3859195e21a0d2ed58f6e14f8cd88c123c4f9e44e1e0a38e6dceb13f8f1c06daa66357146e8e02179daba7d5197b8eb485f8da7ec1758cd5fe02 | jq -r '. | select(.valid) // select(.level=="error") // empty'
 
   test-health:
     deps: [build]
@@ -138,7 +146,7 @@ tasks:
         SIGNED_CERTIFICATE=$( ./bin/{{.APP_NAME}} sign-certificate --profile=Default \
           --csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
           --caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
-          --caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem \
+          --keyFile=$TEST_CA_DIR/test-CA-nist-secp384r1.pem \
           --encoding=pem \
           | jq -r '.pem // .der // empty' )
 
@@ -160,7 +168,7 @@ tasks:
         --hashData-data="hello benchmark" \
         --signCertificate-csr=$TEST_CSR_DIR/csr-nist-secp256r1.csr \
         --signCertificate-caCert=$TEST_CA_DIR/cert-test-CA-nist-secp384r1.pem \
-        --signCertificate-caKey=$TEST_CA_DIR/test-CA-nist-secp384r1.pem
+        --signCertificate-keyFile=$TEST_CA_DIR/test-CA-nist-secp384r1.pem
 
   ################# Continuous Improvement Tasks ####################
   npm-ci:

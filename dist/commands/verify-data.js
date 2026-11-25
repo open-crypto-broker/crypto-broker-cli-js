@@ -1,6 +1,7 @@
 import { AttrCryptoProfile, AttrRpcMethod } from '../otel/attributes.js';
 import { SignatureFormat, } from '@open-crypto-broker/cryptobroker-client';
 import { enumKeysToStringArray } from '../utils/conversions.js';
+import fs from 'fs';
 export function addVerifyDataParser(sub_parsers) {
     const verifyData_parser = sub_parsers.add_parser('verify-data', {
         help: 'Verifies signed data',
@@ -15,9 +16,8 @@ export function addVerifyDataParser(sub_parsers) {
     verifyData_key_group.add_argument('--keyId', {
         help: 'Specifies which key from the KMS was used for signing',
     });
-    verifyData_key_group.add_argument('--keyRaw', {
-        type: (arg) => Buffer.from(arg, 'hex'),
-        help: 'Specifies the raw key bytes that were used for signing (hex-based)',
+    verifyData_key_group.add_argument('--keyFile', {
+        help: 'Specifies the file path to the PEM-encoded key to validate the signature',
     });
     verifyData_parser.add_argument('--signature-format', {
         default: 'RAW',
@@ -29,6 +29,7 @@ export function addVerifyDataParser(sub_parsers) {
         help: 'Specifies the input that was signed [Only string-based for this CLI.]',
     });
     verifyData_parser.add_argument('signature', {
+        type: (str) => Buffer.from(str, 'hex'),
         help: 'Specifies the signature to be verified (hex-based)',
     });
     return verifyData_parser;
@@ -44,10 +45,11 @@ export class VerifyDataCommand {
     constructor(parsed_args) {
         this.profile = parsed_args.profile;
         this.keyId = parsed_args.keyId;
-        this.keyRaw = parsed_args.keyRaw;
         this.input = parsed_args.input;
         this.signature = parsed_args.signature;
         this.format = parsed_args.signature_format;
+        // get file contents
+        this.keyRaw = fs.readFileSync(parsed_args.keyFile);
     }
     getPayload() {
         return {

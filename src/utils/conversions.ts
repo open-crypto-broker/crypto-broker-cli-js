@@ -15,10 +15,3 @@ export function enumKeysToStringArray<
   filtered_keys.forEach((key) => short_keys.push(key.replace(prefix, '')));
   return short_keys;
 }
-
-export function PEMToBytes(pem: string): Uint8Array {
-  return Buffer.from(
-    pem.replace(/-----BEGIN [^-]+-----|-----END [^-]+-----|\s/g, '').trim(),
-    'base64',
-  );
-}
